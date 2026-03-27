@@ -1,14 +1,11 @@
-"""
-Web 服务器 - Flask + HTML5 Canvas
-提供浏览器可玩的 Web 版本
-"""
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
 import json
 import sys
 import os
 
-sys.path.insert(0, os.path.dirname(__file__))
+# 添加项目根目录到路径
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from board import GameBoard
 from harness.monitors import Monitors
