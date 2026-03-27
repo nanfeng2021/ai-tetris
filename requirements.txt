@@ -1,6 +1,10 @@
 # 游戏核心
 pygame==2.5.2
 
+# Web 服务器
+Flask==3.0.0
+Flask-CORS==4.0.0
+
 # 监控指标
 prometheus-client==0.19.0
 

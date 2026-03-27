@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 俄罗斯方块 - Harness Engineering</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            gap: 30px;
+            padding: 20px;
+        }
+        
+        .game-area {
+            position: relative;
+        }
+        
+        canvas {
+            border: 3px solid #00f3ff;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.5);
+            background: rgba(10, 10, 20, 0.9);
+        }
+        
+        .info-panel {
+            width: 250px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .stat-box {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #00f3ff;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #00f3ff;
+            margin-bottom: 10px;
+        }
+        
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        .controls {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #ff00ff;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .controls h3 {
+            color: #ff00ff;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .control-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .key {
+            background: #333;
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #555;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-start {
+            background: linear-gradient(135deg, #00f3ff, #00ff41);
+            color: #000;
+        }
+        
+        .btn-start:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.5);
+        }
+        
+        .btn-stop {
+            background: linear-gradient(135deg, #ff0060, #ff00ff);
+            color: #fff;
+        }
+        
+        .btn-stop:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 0, 96, 0.5);
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 3px solid #ff0060;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            display: none;
+        }
+        
+        .game-over h2 {
+            color: #ff0060;
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        
+        .game-over p {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        
+        /* 网格背景 */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            pointer-events: none;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+    
+    <div class="container">
+        <div class="game-area">
+            <canvas id="gameCanvas" width="300" height="600"></canvas>
+            <div id="gameOver" class="game-over">
+                <h2>GAME OVER</h2>
+                <p>Score: <span id="finalScore">0</span></p>
+                <button class="btn-start" onclick="initGame()">Restart</button>
+            </div>
+        </div>
+        
+        <div class="info-panel">
+            <div class="stat-box">
+                <div class="stat-label">SCORE</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            
+            <div class="stat-box">
+                <div class="stat-label">LINES</div>
+                <div class="stat-value" id="lines">0</div>
+            </div>
+            
+            <div class="stat-box">
+                <div class="stat-label">LEVEL</div>
+                <div class="stat-value" id="level">1</div>
+            </div>
+            
+            <div class="controls">
+                <h3>CONTROLS</h3>
+                <div class="control-item">
+                    <span>Move Left</span>
+                    <span class="key">←</span>
+                </div>
+                <div class="control-item">
+                    <span>Move Right</span>
+                    <span class="key">→</span>
+                </div>
+                <div class="control-item">
+                    <span>Rotate</span>
+                    <span class="key">↑</span>
+                </div>
+                <div class="control-item">
+                    <span>Soft Drop</span>
+                    <span class="key">↓</span>
+                </div>
+                <div class="control-item">
+                    <span>Hard Drop</span>
+                    <span class="key">Space</span>
+                </div>
+                <div class="control-item">
+                    <span>Pause</span>
+                    <span class="key">P</span>
+                </div>
+            </div>
+            
+            <div class="buttons">
+                <button class="btn-start" onclick="initGame()">Start</button>
+                <button class="btn-stop" onclick="stopGame()">Stop</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const CELL_SIZE = 30;
+        const BOARD_WIDTH = 10;
+        const BOARD_HEIGHT = 20;
+        
+        let gameState = null;
+        let gameLoop = null;
+        let lastTime = 0;
+        let dropCounter = 0;
+        let dropInterval = 1000;
+        
+        // 方块颜色
+        const COLORS = {
+            'I': [0, 243, 255],
+            'O': [255, 243, 0],
+            'T': [170, 0, 255],
+            'S': [0, 255, 65],
+            'Z': [255, 0, 60],
+            'J': [0, 0, 255],
+            'L': [255, 128, 0]
+        };
+        
+        async function initGame() {
+            try {
+                const response = await fetch('/api/init', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('gameOver').style.display = 'none';
+                    startGameLoop();
+                }
+            } catch (error) {
+                console.error('Failed to init game:', error);
+            }
+        }
+        
+        function stopGame() {
+            if (gameLoop) {
+                cancelAnimationFrame(gameLoop);
+                gameLoop = null;
+            }
+        }
+        
+        async function fetchGameState() {
+            try {
+                const response = await fetch('/api/state');
+                gameState = await response.json();
+                return gameState;
+            } catch (error) {
+                console.error('Failed to fetch state:', error);
+                return null;
+            }
+        }
+        
+        function render(state) {
+            // 清空画布
+            ctx.fillStyle = '#0a0a0f';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制网格
+            ctx.strokeStyle = '#1e1e32';
+            for (let x = 0; x <= BOARD_WIDTH; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * CELL_SIZE, 0);
+                ctx.lineTo(x * CELL_SIZE, BOARD_HEIGHT * CELL_SIZE);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= BOARD_HEIGHT; y++) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * CELL_SIZE);
+                ctx.lineTo(BOARD_WIDTH * CELL_SIZE, y * CELL_SIZE);
+                ctx.stroke();
+            }
+            
+            // 绘制已锁定的方块
+            if (state.board) {
+                for (let y = 0; y < BOARD_HEIGHT; y++) {
+                    for (let x = 0; x < BOARD_WIDTH; x++) {
+                        if (state.board[y][x]) {
+                            drawCell(x, y, COLORS[state.board[y][x]]);
+                        }
+                    }
+                }
+            }
+            
+            // 绘制当前方块
+            if (state.current_piece) {
+                const color = COLORS[state.current_piece.type];
+                state.current_piece.shape.forEach((row, rowIndex) => {
+                    row.forEach((cell, colIndex) => {
+                        if (cell) {
+                            const x = state.current_piece.x + colIndex;
+                            const y = state.current_piece.y + rowIndex;
+                            if (y >= 0) {
+                                drawCell(x, y, color);
+                            }
+                        }
+                    });
+                });
+            }
+            
+            // 更新 UI
+            document.getElementById('score').textContent = state.score || 0;
+            document.getElementById('lines').textContent = state.lines || 0;
+            document.getElementById('level').textContent = state.level || 1;
+            
+            // 游戏结束
+            if (state.game_over) {
+                document.getElementById('finalScore').textContent = state.score || 0;
+                document.getElementById('gameOver').style.display = 'block';
+                stopGame();
+            }
+        }
+        
+        function drawCell(x, y, color) {
+            ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+            ctx.fillRect(
+                x * CELL_SIZE + 1,
+                y * CELL_SIZE + 1,
+                CELL_SIZE - 2,
+                CELL_SIZE - 2
+            );
+            
+            // 高光效果
+            ctx.fillStyle = `rgb(${Math.min(255, color[0] + 50)}, ${Math.min(255, color[1] + 50)}, ${Math.min(255, color[2] + 50)})`;
+            ctx.fillRect(
+                x * CELL_SIZE + 4,
+                y * CELL_SIZE + 4,
+                CELL_SIZE - 8,
+                CELL_SIZE - 8
+            );
+        }
+        
+        async function sendMove(action) {
+            try {
+                const response = await fetch('/api/move', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to send move:', error);
+                return null;
+            }
+        }
+        
+        function startGameLoop() {
+            lastTime = 0;
+            dropCounter = 0;
+            
+            function update(time = 0) {
+                const deltaTime = time - lastTime;
+                lastTime = time;
+                
+                dropCounter += deltaTime;
+                if (dropCounter > dropInterval) {
+                    sendMove('down');
+                    dropCounter = 0;
+                }
+                
+                fetchGameState().then(state => {
+                    if (state) {
+                        render(state);
+                    }
+                });
+                
+                gameLoop = requestAnimationFrame(update);
+            }
+            
+            update();
+        }
+        
+        // 键盘控制
+        document.addEventListener('keydown', async (e) => {
+            if (!gameState || gameState.game_over) return;
+            
+            switch(e.key) {
+                case 'ArrowLeft':
+                    await sendMove('left');
+                    break;
+                case 'ArrowRight':
+                    await sendMove('right');
+                    break;
+                case 'ArrowUp':
+                    await sendMove('rotate');
+                    break;
+                case 'ArrowDown':
+                    await sendMove('down');
+                    break;
+                case ' ':
+                    await sendMove('drop');
+                    break;
+                case 'p':
+                case 'P':
+                    // TODO: 暂停功能
+                    break;
+            }
+        });
+        
+        // 初始渲染空面板
+        render({
+            board: Array(BOARD_HEIGHT).fill().map(() => Array(BOARD_WIDTH).fill(null)),
+            score: 0,
+            lines: 0,
+            level: 1,
+            game_over: false,
+            current_piece: null
+        });
+    </script>
+</body>
+</html>

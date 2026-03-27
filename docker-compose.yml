@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # 游戏主服务
+  tetris-game:
+    build: .
+    container_name: ai-tetris-game
+    ports:
+      - "8000:8000"
+    environment:
+      - DISPLAY=:0
+      - GAME_MODE=ai
+      - GAME_SPEED=0.5
+    volumes:
+      - ./src:/app/src
+      - ./config:/app/config
+    restart: unless-stopped
+  
+  # Prometheus 监控
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ai-tetris-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    restart: unless-stopped
+  
+  # Grafana 可视化（可选）
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ai-tetris-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:
+  grafana_data:
