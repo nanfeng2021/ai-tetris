@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head><title>Test</title></head>
+<body>
+    <h1>AI Tetris Test</h1>
+    <button onclick="testInit()">测试初始化</button>
+    <button onclick="testState()">测试状态</button>
+    <pre id="result"></pre>
+    
+    <script>
+        async function testInit() {
+            try {
+                const res = await fetch('/api/init', {method: 'POST'});
+                const data = await res.json();
+                document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+                console.log('Init success:', data);
+            } catch (e) {
+                document.getElementById('result').textContent = 'Error: ' + e.message;
+                console.error('Init failed:', e);
+            }
+        }
+        
+        async function testState() {
+            try {
+                const res = await fetch('/api/state');
+                const data = await res.json();
+                document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+                console.log('State:', data);
+            } catch (e) {
+                document.getElementById('result').textContent = 'Error: ' + e.message;
+                console.error('State failed:', e);
+            }
+        }
+        
+        console.log('Page loaded, JS working!');
+    </script>
+</body>
+</html>
