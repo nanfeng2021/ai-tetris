@@ -1,23 +1,27 @@
 # 游戏核心
-pygame==2.5.2
+pygame>=2.5.0,<3.0.0
 
 # Web 服务器
-Flask==3.0.0
-Flask-CORS==4.0.0
+Flask>=3.0.0,<4.0.0
+Flask-CORS>=4.0.0,<5.0.0
 
 # 监控指标
-prometheus-client==0.19.0
+prometheus-client>=0.19.0,<1.0.0
 
-# AI 相关
-numpy==1.26.3
-torch==2.2.0
+# AI 相关 (可选，如不需要深度学习可注释)
+# numpy>=1.26.0,<2.0.0
+# torch>=2.2.0,<3.0.0
 
 # 配置管理
-PyYAML==6.0.1
+PyYAML>=6.0.0,<7.0.0
 
 # 测试
-pytest==7.4.4
-pytest-cov==4.1.0
+pytest>=7.4.0,<8.0.0
+pytest-cov>=4.1.0,<5.0.0
 
 # 工具
-python-dotenv==1.0.0
+python-dotenv>=1.0.0,<2.0.0
+
+# 生产环境推荐（可选）
+# gunicorn>=21.0.0,<22.0.0
+# redis>=5.0.0,<6.0.0  # 用于状态持久化

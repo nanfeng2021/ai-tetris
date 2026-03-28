@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     libsdl2-image-2.0-0 \
     libsdl2-mixer-2.0-0 \
     libsdl2-ttf-2.0-0 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # 复制依赖文件
@@ -18,14 +19,22 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # 复制源代码
 COPY src/ ./src/
+COPY web/ ./web/
 COPY config/ ./config/
 
+# 创建日志目录
+RUN mkdir -p /app/logs
+
 # 暴露端口
-EXPOSE 8000 9090
+EXPOSE 5000
 
 # 设置环境变量
 ENV PYTHONUNBUFFERED=1
-ENV DISPLAY=:0
+ENV FLASK_ENV=production
 
-# 默认启动命令（AI 模式）
-CMD ["python", "src/game.py", "--mode", "ai", "--speed", "0.5"]
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:5000/api/state || exit 1
+
+# 默认启动命令（Web 模式）
+CMD ["python", "web/server.py"]
