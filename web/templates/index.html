@@ -443,8 +443,19 @@
         </div>
         
         <!-- 操作提示 -->
-        <div id="helpTip" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:#fff;padding:8px 16px;border-radius:20px;font-size:12px;pointer-events:none;opacity:0.8;text-align:center;">
-            👆 点击旋转 | ⬅️➡️ 滑动移动<br/>⬆️ 上滑旋转 | ⬇️ 下滑加速
+        <div id="helpTip" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:10px 20px;border-radius:25px;font-size:13px;pointer-events:none;opacity:0.9;text-align:center;backdrop-filter:blur(5px);border:1px solid rgba(0,243,255,0.3);">
+            <div style="margin-bottom:6px;">
+                <span style="color:#00f3ff;">👆</span> 点击旋转 
+                <span style="color:#666;margin:0 8px;">|</span>
+                <span style="color:#00f3ff;">⬅️➡️</span> 左右滑动移动
+            </div>
+            <div style="font-size:12px;color:#aaa;">
+                <span style="color:#ff00ff;">⬆️</span> 上滑旋转 
+                <span style="color:#666;margin:0 8px;">|</span>
+                <span style="color:#ffa500;">⬇️</span> 下滑加速
+                <span style="color:#666;margin:0 8px;">|</span>
+                <span style="color:#00ff41;">空格</span> 直落
+            </div>
         </div>
     </div>
     
@@ -458,11 +469,18 @@
                 
                 <h4>📌 操作方式</h4>
                 <ul>
-                    <li>👆 旋转方块：<span class="key-badge">点击游戏框</span> 或 <span class="key-badge">↑</span></li>
-                    <li>⬅️ 左移：<span class="key-badge">←</span></li>
-                    <li>➡️ 右移：<span class="key-badge">→</span></li>
-                    <li>⬇️ 加速下落：<span class="key-badge">↓</span></li>
-                    <li>💥 直接掉落：<span class="key-badge">空格</span></li>
+                    <li>👆 旋转方块：<span class="key-badge">点击游戏框</span> 或 <span class="key-badge">⬆️ 上滑</span></li>
+                    <li>⬅️ 左移：<span class="key-badge">⬅️ 左滑</span> 或 <span class="key-badge">←</span></li>
+                    <li>➡️ 右移：<span class="key-badge">➡️ 右滑</span> 或 <span class="key-badge">→</span></li>
+                    <li>⬇️ 加速下落：<span class="key-badge">⬇️ 下滑</span> 或 <span class="key-badge">↓</span></li>
+                    <li>💥 直接掉落：<span class="key-badge">空格键</span> (仅电脑端)</li>
+                </ul>
+                
+                <h4>💡 手势技巧</h4>
+                <ul>
+                    <li>✨ 短促点击 = 快速旋转</li>
+                    <li>🎯 滑动手势更流畅，适合移动端</li>
+                    <li>⚡ 连续下滑可加速下落</li>
                 </ul>
                 
                 <h4>🎯 得分规则</h4>
