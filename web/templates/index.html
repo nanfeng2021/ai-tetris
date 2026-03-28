@@ -502,57 +502,74 @@
         const BOARD_WIDTH = 10;
         const BOARD_HEIGHT = 20;
         
-        // 音效管理器
+        // 音效管理器（优化版 - 支持兼容性检测）
         const SoundManager = {
             enabled: true,
-            sounds: {},
+            audioCtx: null,
+            sounds: {
+                move: { freq: 300, type: 'sine', duration: 0.05 },
+                rotate: { freq: 400, type: 'square', duration: 0.08 },
+                drop: { freq: [600, 400], type: 'triangle', duration: 0.15 },
+                clear: { freq: [523, 659, 784, 1047], type: 'square', duration: 0.3 },
+                gameOver: { freq: [400, 300, 200, 100], type: 'sawtooth', duration: 0.6 }
+            },
             
             init() {
-                // 创建合成器音效（无需外部文件）
-                this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                
-                // 定义音效频率和类型
-                this.sounds = {
-                    move: { freq: 300, type: 'sine', duration: 0.05 },
-                    rotate: { freq: 400, type: 'square', duration: 0.08 },
-                    drop: { freq: [600, 400], type: 'triangle', duration: 0.15 },
-                    clear: { freq: [523, 659, 784, 1047], type: 'square', duration: 0.3 },
-                    gameOver: { freq: [400, 300, 200, 100], type: 'sawtooth', duration: 0.6 }
-                };
+                if (!this.audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) {
+                        this.audioCtx = new AudioContext();
+                        console.log('✅ Web Audio API initialized');
+                    } else {
+                        console.warn('⚠️ Web Audio API not supported, sound disabled');
+                        this.enabled = false;
+                    }
+                }
             },
             
             play(soundName) {
                 if (!this.enabled || !this.audioCtx) return;
                 
+                // 恢复可能被暂停的音频上下文（后台标签页）
+                if (this.audioCtx.state === 'suspended') {
+                    this.audioCtx.resume().catch(() => {});
+                }
+                
                 const sound = this.sounds[soundName];
                 if (!sound) return;
                 
-                const now = this.audioCtx.currentTime;
-                const frequencies = Array.isArray(sound.freq) ? sound.freq : [sound.freq];
-                
-                frequencies.forEach((freq, index) => {
-                    const oscillator = this.audioCtx.createOscillator();
-                    const gainNode = this.audioCtx.createGain();
+                try {
+                    const now = this.audioCtx.currentTime;
+                    const frequencies = Array.isArray(sound.freq) ? sound.freq : [sound.freq];
                     
-                    oscillator.type = sound.type;
-                    oscillator.frequency.value = freq;
-                    
-                    // 包络控制
-                    const startTime = now + (index * 0.05);
-                    gainNode.gain.setValueAtTime(0, startTime);
-                    gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.02);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + sound.duration);
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(this.audioCtx.destination);
-                    
-                    oscillator.start(startTime);
-                    oscillator.stop(startTime + sound.duration);
-                });
+                    frequencies.forEach((freq, index) => {
+                        const oscillator = this.audioCtx.createOscillator();
+                        const gainNode = this.audioCtx.createGain();
+                        
+                        oscillator.type = sound.type;
+                        oscillator.frequency.value = freq;
+                        
+                        const startTime = now + (index * 0.05);
+                        gainNode.gain.setValueAtTime(0, startTime);
+                        gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.02);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + sound.duration);
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(this.audioCtx.destination);
+                        
+                        oscillator.start(startTime);
+                        oscillator.stop(startTime + sound.duration);
+                    });
+                } catch (e) {
+                    console.warn('Sound play error:', e.message);
+                }
             },
             
             toggle() {
                 this.enabled = !this.enabled;
+                if (this.enabled && this.audioCtx?.state === 'suspended') {
+                    this.audioCtx.resume();
+                }
                 return this.enabled;
             }
         };
