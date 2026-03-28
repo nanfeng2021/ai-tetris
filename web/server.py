@@ -29,21 +29,23 @@ game_state = {
 }
 
 # 线程锁，防止并发请求导致状态混乱
-game_lock = Lock()
+# game_lock = Lock()  # 临时禁用，排查死锁问题
+game_lock = None  # 临时禁用
 
 
 def require_game(func):
     """装饰器：检查游戏是否已初始化"""
     @wraps(func)
     def wrapper(*args, **kwargs):
-        with game_lock:
-            if not game_state.get('board'):
-                logger.warning("Game not initialized")
-                return jsonify({'error': 'Game not initialized', 'code': 'NOT_INIT'}), 400
-            if not game_state.get('running'):
-                logger.warning("Game not running")
-                return jsonify({'error': 'Game not running', 'code': 'NOT_RUNNING'}), 400
-            return func(*args, **kwargs)
+        # if game_lock:
+        #     with game_lock:
+        if not game_state.get('board'):
+            logger.warning("Game not initialized")
+            return jsonify({'error': 'Game not initialized', 'code': 'NOT_INIT'}), 400
+        if not game_state.get('running'):
+            logger.warning("Game not running")
+            return jsonify({'error': 'Game not running', 'code': 'NOT_RUNNING'}), 400
+        return func(*args, **kwargs)
     return wrapper
 
 
@@ -56,29 +58,35 @@ def index():
 @app.route('/api/init', methods=['POST'])
 def init_game():
     """初始化游戏"""
+    logger.info(f"=== API /api/init 被调用 ===")
     try:
-        with game_lock:
-            monitor = Monitors(game_id="web_game")
-            board = GameBoard(monitor)
-            board.reset()
-            board.spawn_piece()
-            
-            game_state['board'] = board
-            game_state['monitor'] = monitor
-            game_state['running'] = True
-            game_state['session_id'] = os.urandom(16).hex()
-            
-            monitor.start_game(mode='web')
-            
-            logger.info(f"Game initialized, session: {game_state['session_id']}")
-            
-            return jsonify({
-                'success': True,
-                'session_id': game_state['session_id'],
-                'message': 'Game initialized'
-            })
+        logger.info("正在创建游戏实例...")
+        monitor = Monitors(game_id="web_game")
+        board = GameBoard(monitor)
+        logger.info("游戏面板已创建")
+        board.reset()
+        logger.info("游戏已重置")
+        board.spawn_piece()
+        logger.info("方块已生成")
+        
+        game_state['board'] = board
+        game_state['monitor'] = monitor
+        game_state['running'] = True
+        game_state['session_id'] = os.urandom(16).hex()
+        
+        monitor.start_game(mode='web')
+        
+        logger.info(f"✅ 游戏初始化成功，session: {game_state['session_id']}")
+        
+        return jsonify({
+            'success': True,
+            'session_id': game_state['session_id'],
+            'message': 'Game initialized'
+        })
     except Exception as e:
-        logger.error(f"Failed to init game: {e}", exc_info=True)
+        logger.error(f"❌ 初始化失败：{e}", exc_info=True)
+        import traceback
+        logger.error(traceback.format_exc())
         return jsonify({'error': str(e), 'code': 'INIT_FAILED'}), 500
 
 
@@ -132,65 +140,80 @@ def get_state():
 @require_game
 def move():
     """执行移动"""
+    logger.info(f"=== API /api/move 被调用 ===")
     try:
         data = request.get_json()
+        logger.info(f"收到请求数据：{data}")
+        
         if not data:
+            logger.warning("请求数据为空")
             return jsonify({'error': 'Invalid JSON', 'code': 'INVALID_JSON'}), 400
         
         action = data.get('action')
+        logger.info(f"执行动作：{action}")
         
         if not action or action not in ['left', 'right', 'down', 'rotate', 'drop']:
+            logger.warning(f"无效动作：{action}")
             return jsonify({'error': 'Invalid action', 'code': 'INVALID_ACTION'}), 400
         
-        with game_lock:
-            board = game_state['board']
-            
-            if action == 'left':
-                success = board.move_piece(-1, 0)
-            elif action == 'right':
-                success = board.move_piece(1, 0)
-            elif action == 'down':
-                success = board.move_piece(0, 1)
-            elif action == 'rotate':
-                success = board.rotate_piece()
-            elif action == 'drop':
-                board.hard_drop()
-                board.lock_piece()
-                success = True
-            
-            # 检查是否需要锁定（非 drop 操作）
-            if action != 'drop' and not board.move_piece(0, 1):
-                board.lock_piece()
-            
-            logger.debug(f"Move {action}: success={success}")
-            
-            # 直接返回状态，避免二次调用
-            board_data = []
-            for row in board.board:
-                board_data.append([cell if cell else None for cell in row])
-            
-            current_piece = None
-            if board.current_piece:
-                current_piece = {
-                    'type': board.current_piece.type.value,
-                    'shape': board.current_piece.shape,
-                    'x': board.current_piece.x,
-                    'y': board.current_piece.y
-                }
-            
-            return jsonify({
-                'success': success,
-                'state': {
-                    'board': board_data,
-                    'score': board.score,
-                    'lines': board.lines,
-                    'level': board.level,
-                    'game_over': board.game_over,
-                    'current_piece': current_piece
-                }
-            })
+        # if game_lock:
+        #     with game_lock:
+        board = game_state['board']
+        logger.info(f"当前游戏状态：running={game_state['running']}, game_over={board.game_over}")
+        
+        if action == 'left':
+            success = board.move_piece(-1, 0)
+        elif action == 'right':
+            success = board.move_piece(1, 0)
+        elif action == 'down':
+            success = board.move_piece(0, 1)
+        elif action == 'rotate':
+            success = board.rotate_piece()
+        elif action == 'drop':
+            logger.info("执行硬降落")
+            board.hard_drop()
+            board.lock_piece()
+            success = True
+        
+        # 检查是否需要锁定（非 drop 操作）
+        if action != 'drop' and not board.move_piece(0, 1):
+            logger.info("方块已到底，锁定")
+            board.lock_piece()
+        
+        logger.info(f"移动结果：success={success}")
+        
+        # 直接返回状态，避免二次调用
+        board_data = []
+        for row in board.board:
+            board_data.append([cell if cell else None for cell in row])
+        
+        current_piece = None
+        if board.current_piece:
+            current_piece = {
+                'type': board.current_piece.type.value,
+                'shape': board.current_piece.shape,
+                'x': board.current_piece.x,
+                'y': board.current_piece.y
+            }
+        
+        response = {
+            'success': success,
+            'state': {
+                'board': board_data,
+                'score': board.score,
+                'lines': board.lines,
+                'level': board.level,
+                'game_over': board.game_over,
+                'current_piece': current_piece
+            }
+        }
+        
+        logger.info(f"返回响应：success={success}, game_over={board.game_over}")
+        return jsonify(response)
     except Exception as e:
-        logger.error(f"Move failed: {e}", exc_info=True)
+        logger.error(f"❌ 移动失败：{e}", exc_info=True)
+        import traceback
+        logger.error(traceback.format_exc())
         return jsonify({'error': str(e), 'code': 'MOVE_FAILED'}), 500
 
 
@@ -221,4 +244,5 @@ if __name__ == "__main__":
     print("API 文档：http://localhost:5000/docs")
     print("=" * 60)
     
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # 关闭 debug 模式，避免 reloader 导致死锁
+    app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)

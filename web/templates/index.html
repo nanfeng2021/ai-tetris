@@ -676,17 +676,23 @@
         }
         
         async function initGame() {
+            console.log('🚀 开始初始化游戏...');
             try {
                 SoundManager.init();
+                console.log('🔊 音效系统已初始化');
                 
                 const response = await fetch('/api/init', { method: 'POST' });
+                console.log('📡 API 响应状态:', response.status);
+                
                 const data = await response.json();
+                console.log('📦 API 返回数据:', data);
                 
                 if (data.success) {
                     // 保存 session_id 到 localStorage
                     if (data.session_id) {
                         localStorage.setItem('tetris_session', data.session_id);
                         localStorage.setItem('tetris_init_time', Date.now().toString());
+                        console.log('💾 Session 已保存:', data.session_id);
                     }
                     
                     document.getElementById('gameOver').style.display = 'none';
@@ -696,13 +702,18 @@
                     dropInterval = 1000;
                     lastRenderedState = null;
                     networkErrorShown = false;
+                    
+                    console.log('✅ 游戏状态已重置');
+                    console.log('▶️ 启动游戏循环...');
                     startGameLoop();
                     SoundManager.play('drop');
                     
-                    console.log('Game initialized, session:', data.session_id);
+                    console.log('🎉 游戏初始化完成！');
+                } else {
+                    console.error('❌ 初始化失败:', data);
                 }
             } catch (error) {
-                console.error('Failed to init game:', error);
+                console.error('❌ 初始化异常:', error);
                 showNetworkError();
             }
         }
@@ -964,6 +975,9 @@
             
             lastTime = performance.now();
             dropCounter = 0;
+            gameState = null; // 重置 gameState
+            
+            console.log('🎮 游戏循环已启动');
             
             function update(time) {
                 if (!isGameRunning || isPaused) return;
@@ -974,7 +988,7 @@
                 dropCounter += deltaTime;
                 
                 // 根据等级调整下落速度
-                const currentDropInterval = Math.max(100, 1000 - (gameState?.level - 1) * 100);
+                const currentDropInterval = Math.max(100, 1000 - ((gameState?.level || 1) - 1) * 100);
                 
                 if (dropCounter > currentDropInterval) {
                     sendMove('down');
@@ -983,14 +997,22 @@
                 
                 fetchGameState().then(state => {
                     if (state) {
+                        const oldLevel = gameState?.level || 1;
                         gameState = state;
                         render(state);
                         
                         // 检查游戏结束条件
                         if (state.game_over) {
+                            console.log('💀 游戏结束');
                             endGame(state);
+                        } else if (state.lines > 0 && state.lines !== (oldLevel === 1 ? 0 : gameState?.lines)) {
+                            console.log(`✅ 消除 ${state.lines} 行，等级 ${state.level}`);
                         }
+                    } else {
+                        console.warn('⚠️ 获取游戏状态失败');
                     }
+                }).catch(err => {
+                    console.error('❌ fetchGameState 错误:', err);
                 });
                 
                 if (isGameRunning && !isPaused) {
