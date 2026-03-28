@@ -274,7 +274,19 @@
             text-align: center;
             display: none;
             z-index: 100;
-            min-width: 200px;
+            min-width: 220px;
+            animation: popIn 0.3s ease-out;
+        }
+        
+        @keyframes popIn {
+            0% {
+                transform: translate(-50%, -50%) scale(0.8);
+                opacity: 0;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
         }
         
         .game-over {
@@ -410,9 +422,23 @@
         
         <!-- 游戏结束 -->
         <div id="gameOver" class="overlay-message game-over">
-            <h2>GAME OVER</h2>
-            <p>得分：<span id="finalScore">0</span></p>
-            <button class="btn-restart" onclick="initGame()">再玩一次</button>
+            <h2>🎮 游戏结束</h2>
+            <p>方块已经堆到顶部啦！</p>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">得分</div>
+                    <div class="stat-value" id="finalScore">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">行数</div>
+                    <div class="stat-value" id="finalLines">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">等级</div>
+                    <div class="stat-value" id="finalLevel">1</div>
+                </div>
+            </div>
+            <button class="btn-restart" onclick="initGame()">🔄 再来一局</button>
         </div>
         
         <!-- 暂停提示 -->
@@ -538,6 +564,9 @@
         let dropInterval = 1000;
         let isPaused = false;
         let isGameRunning = false;
+        let lastRenderedState = null;
+        let lastMoveTime = 0;
+        const MOVE_THROTTLE = 80; // 操作节流 80ms
         
         // 触摸控制变量
         let touchStartX = 0;
@@ -608,33 +637,41 @@
             document.getElementById('helpModal').style.display = 'none';
         }
         
-        // 按钮触摸处理
+        // 按钮触摸处理（优化响应）
         function handleTouch(event, action) {
             event.preventDefault();
-            if (action === 'start') initGame();
-            else if (action === 'stop') stopGame();
-            else if (action === 'pause') togglePause();
-            else if (action === 'help') showHelpModal();
-            else if (action === 'sound') {
+            event.stopPropagation();
+            
+            if (action === 'start') {
+                initGame();
+            } else if (action === 'stop') {
+                stopGame();
+            } else if (action === 'pause') {
+                togglePause();
+            } else if (action === 'help') {
+                showHelpModal();
+            } else if (action === 'sound') {
                 const enabled = SoundManager.toggle();
-                event.target.textContent = enabled ? '🔊' : '🔇';
+                document.getElementById('soundBtn').textContent = enabled ? '🔊' : '🔇';
+            } else if (isGameRunning && !isPaused) {
+                sendMove(action);
             }
-            else if (isGameRunning && !isPaused) sendMove(action);
         }
         
         async function initGame() {
             try {
-                // 初始化音效（需要用户交互后才能播放）
-                if (!SoundManager.audioCtx) SoundManager.init();
+                SoundManager.init();
                 
                 const response = await fetch('/api/init', { method: 'POST' });
                 const data = await response.json();
+                
                 if (data.success) {
                     document.getElementById('gameOver').style.display = 'none';
                     document.getElementById('pauseOverlay').style.display = 'none';
                     isPaused = false;
                     isGameRunning = true;
                     dropInterval = 1000;
+                    lastRenderedState = null;
                     startGameLoop();
                     SoundManager.play('drop');
                 }
@@ -685,6 +722,19 @@
         
         function render(state) {
             const CELL_SIZE = getCellSize();
+            
+            // 避免重复渲染相同状态（性能优化）
+            if (lastRenderedState && 
+                lastRenderedState.score === state.score && 
+                lastRenderedState.lines === state.lines &&
+                JSON.stringify(lastRenderedState.board) === JSON.stringify(state.board)) {
+                return;
+            }
+            lastRenderedState = {
+                score: state.score,
+                lines: state.lines,
+                board: state.board ? state.board.map(row => [...row]) : null
+            };
             
             ctx.fillStyle = '#0a0a0f';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -758,6 +808,15 @@
         };
         
         async function sendMove(action) {
+            if (!isGameRunning || isPaused) return null;
+            
+            // 节流控制，防止过快操作
+            const now = Date.now();
+            if (now - lastMoveTime < MOVE_THROTTLE) {
+                return null;
+            }
+            lastMoveTime = now;
+            
             try {
                 const response = await fetch('/api/move', {
                     method: 'POST',
@@ -766,12 +825,14 @@
                 });
                 const result = await response.json();
                 
-                // 播放音效
                 if (result && result.success !== false) {
-                    if (action === 'left' || action === 'right') SoundManager.play('move');
-                    else if (action === 'rotate') SoundManager.play('rotate');
-                    else if (action === 'drop') SoundManager.play('drop');
-                    else if (action === 'down') SoundManager.play('move');
+                    if (action === 'left' || action === 'right' || action === 'down') {
+                        SoundManager.play('move');
+                    } else if (action === 'rotate') {
+                        SoundManager.play('rotate');
+                    } else if (action === 'drop') {
+                        SoundManager.play('drop');
+                    }
                 }
                 
                 return result;
@@ -826,6 +887,8 @@
         function endGame(state) {
             isGameRunning = false;
             document.getElementById('finalScore').textContent = state.score || 0;
+            document.getElementById('finalLines').textContent = state.lines || 0;
+            document.getElementById('finalLevel').textContent = state.level || 1;
             document.getElementById('gameOver').style.display = 'block';
             SoundManager.play('gameOver');
             
