@@ -293,22 +293,32 @@ async function fetchGameState(retries = 3) {
 function render(state) {
     const CELL_SIZE = getCellSize();
     
-    // 避免重复渲染
-    if (lastRenderedState && 
-        lastRenderedState.score === state.score && 
-        lastRenderedState.lines === state.lines &&
-        JSON.stringify(lastRenderedState.board) === JSON.stringify(state.board)) {
-        return;
+    // 检查是否需要重新渲染
+    const needsRender = !lastRenderedState || 
+        lastRenderedState.score !== state.score || 
+        lastRenderedState.lines !== state.lines ||
+        lastRenderedState.level !== state.level ||
+        JSON.stringify(lastRenderedState.board) !== JSON.stringify(state.board) ||
+        JSON.stringify(lastRenderedState.current_piece) !== JSON.stringify(state.current_piece);
+    
+    if (!needsRender) {
+        return; // 状态无变化，跳过渲染
     }
+    
+    // 保存当前状态用于下次比较
     lastRenderedState = {
         score: state.score,
         lines: state.lines,
-        board: state.board ? state.board.map(row => [...row]) : null
+        level: state.level,
+        board: state.board ? state.board.map(row => [...row]) : null,
+        current_piece: state.current_piece ? {...state.current_piece} : null
     };
     
+    // 清空画布
     ctx.fillStyle = '#0a0a0f';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
+    // 绘制网格
     ctx.strokeStyle = '#1e1e32';
     for (let x = 0; x <= BOARD_WIDTH; x++) {
         ctx.beginPath();
