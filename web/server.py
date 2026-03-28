@@ -95,44 +95,47 @@ def init_game():
 def get_state():
     """获取游戏状态"""
     try:
-        with game_lock:
-            board = game_state['board']
-            
-            # 序列化面板
-            board_data = []
-            for row in board.board:
-                board_data.append([cell if cell else None for cell in row])
-            
-            current_piece = None
-            if board.current_piece:
-                current_piece = {
-                    'type': board.current_piece.type.value,
-                    'shape': board.current_piece.shape,
-                    'x': board.current_piece.x,
-                    'y': board.current_piece.y,
-                    'color': board.current_piece.color
-                }
-            
-            next_piece = None
-            if board.next_piece:
-                next_piece = {
-                    'type': board.next_piece.type.value,
-                    'shape': board.next_piece.shape,
-                    'color': board.next_piece.color
-                }
-            
-            return jsonify({
-                'board': board_data,
-                'score': board.score,
-                'lines': board.lines,
-                'level': board.level,
-                'game_over': board.game_over,
-                'current_piece': current_piece,
-                'next_piece': next_piece,
-                'session_id': game_state.get('session_id')
-            })
+        board = game_state['board']
+        
+        # 序列化面板
+        board_data = []
+        for row in board.board:
+            board_data.append([cell if cell else None for cell in row])
+        
+        current_piece = None
+        if board.current_piece:
+            current_piece = {
+                'type': board.current_piece.type.value,
+                'shape': board.current_piece.shape,
+                'x': board.current_piece.x,
+                'y': board.current_piece.y,
+                'color': board.current_piece.color
+            }
+        
+        next_piece = None
+        if board.next_piece:
+            next_piece = {
+                'type': board.next_piece.type.value,
+                'shape': board.next_piece.shape,
+                'color': board.next_piece.color
+            }
+        
+        logger.info(f"返回游戏状态：score={board.score}, lines={board.lines}, game_over={board.game_over}")
+        
+        return jsonify({
+            'board': board_data,
+            'score': board.score,
+            'lines': board.lines,
+            'level': board.level,
+            'game_over': board.game_over,
+            'current_piece': current_piece,
+            'next_piece': next_piece,
+            'session_id': game_state.get('session_id')
+        })
     except Exception as e:
-        logger.error(f"Failed to get state: {e}", exc_info=True)
+        logger.error(f"❌ 获取状态失败：{e}", exc_info=True)
+        import traceback
+        logger.error(traceback.format_exc())
         return jsonify({'error': str(e), 'code': 'STATE_FAILED'}), 500
 
 
