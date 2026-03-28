@@ -83,22 +83,81 @@ let isPaused = false;
 let isGameRunning = false;
 let lastRenderedState = null;
 
+// 触摸手势支持
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartTime = 0;
+let touchHandled = false;
+const SWIPE_THRESHOLD = 30; // 滑动阈值 (px)
+const TAP_THRESHOLD = 10;   // 点击阈值 (px)
+const LONG_PRESS_TIME = 300; // 长按时间 (ms)
+
 function getCellSize() {
     return canvas.width / BOARD_WIDTH;
 }
 
-// 点击游戏框旋转
-function handleGameClick(event) {
-    event.preventDefault();
-    event.stopPropagation();
+// 游戏区域触摸事件（支持滑动手势）
+const gameArea = document.getElementById('gameArea');
+
+gameArea.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     
-    if (!isGameRunning || isPaused) {
-        console.log('Game not running or paused');
+    if (!isGameRunning || isPaused) return;
+    
+    const touch = e.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    touchStartTime = Date.now();
+    touchHandled = false;
+}, { passive: false });
+
+gameArea.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+}, { passive: false });
+
+gameArea.addEventListener('touchend', handleTouchGesture, { passive: false });
+
+function handleTouchGesture(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!isGameRunning || isPaused) return;
+    
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - touchStartX;
+    const deltaY = touch.clientY - touchStartY;
+    const deltaTime = Date.now() - touchStartTime;
+    
+    // 判断是点击还是滑动
+    if (Math.abs(deltaX) < TAP_THRESHOLD && Math.abs(deltaY) < TAP_THRESHOLD && deltaTime < LONG_PRESS_TIME) {
+        // 短促点击 = 旋转
+        console.log('👆 点击 - 旋转方块');
+        sendMove('rotate');
         return;
     }
     
-    console.log('👆 点击游戏框 - 旋转方块');
-    sendMove('rotate');
+    // 滑动手势
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        // 水平滑动
+        if (deltaX > SWIPE_THRESHOLD) {
+            console.log('➡️ 右滑 - 右移');
+            sendMove('right');
+        } else if (deltaX < -SWIPE_THRESHOLD) {
+            console.log('⬅️ 左滑 - 左移');
+            sendMove('left');
+        }
+    } else {
+        // 垂直滑动
+        if (deltaY > SWIPE_THRESHOLD) {
+            console.log('⬇️ 下滑 - 加速下落');
+            sendMove('down');
+        } else if (deltaY < -SWIPE_THRESHOLD) {
+            console.log('⬆️ 上滑 - 旋转方块');
+            sendMove('rotate');
+        }
+    }
 }
 
 // 弹窗控制
