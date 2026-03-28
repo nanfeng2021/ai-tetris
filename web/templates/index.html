@@ -481,6 +481,7 @@
         let dropCounter = 0;
         let dropInterval = 1000;
         let isPaused = false;
+        let isGameRunning = false;
         
         // 触摸控制变量
         let touchStartX = 0;
@@ -509,6 +510,8 @@
         
         function handleGameTouchEnd(e) {
             e.preventDefault();
+            if (!isGameRunning || isPaused) return;
+            
             const touch = e.changedTouches[0];
             const deltaX = touch.clientX - touchStartX;
             const deltaY = touch.clientY - touchStartY;
@@ -556,7 +559,7 @@
             else if (action === 'stop') stopGame();
             else if (action === 'pause') togglePause();
             else if (action === 'help') showHelpModal();
-            else sendMove(action);
+            else if (isGameRunning && !isPaused) sendMove(action);
         }
         
         async function initGame() {
@@ -567,6 +570,8 @@
                     document.getElementById('gameOver').style.display = 'none';
                     document.getElementById('pauseOverlay').style.display = 'none';
                     isPaused = false;
+                    isGameRunning = true;
+                    dropInterval = 1000; // 重置速度
                     startGameLoop();
                 }
             } catch (error) {
@@ -580,11 +585,12 @@
                 gameLoop = null;
             }
             isPaused = false;
+            isGameRunning = false;
             document.getElementById('pauseOverlay').style.display = 'none';
         }
         
         function togglePause() {
-            if (!gameState || gameState.game_over) return;
+            if (!isGameRunning || !gameState || gameState.game_over) return;
             
             isPaused = !isPaused;
             const pauseOverlay = document.getElementById('pauseOverlay');
@@ -597,6 +603,7 @@
                 }
             } else {
                 pauseOverlay.style.display = 'none';
+                lastTime = performance.now();
                 startGameLoop();
             }
         }
@@ -658,12 +665,6 @@
             document.getElementById('score').textContent = state.score || 0;
             document.getElementById('lines').textContent = state.lines || 0;
             document.getElementById('level').textContent = state.level || 1;
-            
-            if (state.game_over) {
-                document.getElementById('finalScore').textContent = state.score || 0;
-                document.getElementById('gameOver').style.display = 'block';
-                stopGame();
-            }
         }
         
         function drawCell(x, y, color, size) {
@@ -699,33 +700,60 @@
         }
         
         function startGameLoop() {
-            lastTime = 0;
+            if (gameLoop) cancelAnimationFrame(gameLoop);
+            
+            lastTime = performance.now();
             dropCounter = 0;
             
-            function update(time = 0) {
-                if (isPaused) return;
+            function update(time) {
+                if (!isGameRunning || isPaused) return;
                 
                 const deltaTime = time - lastTime;
                 lastTime = time;
                 
                 dropCounter += deltaTime;
-                if (dropCounter > dropInterval) {
+                
+                // 根据等级调整下落速度
+                const currentDropInterval = Math.max(100, 1000 - (gameState?.level - 1) * 100);
+                
+                if (dropCounter > currentDropInterval) {
                     sendMove('down');
                     dropCounter = 0;
                 }
                 
                 fetchGameState().then(state => {
-                    if (state) render(state);
+                    if (state) {
+                        gameState = state;
+                        render(state);
+                        
+                        // 检查游戏结束条件
+                        if (state.game_over) {
+                            endGame(state);
+                        }
+                    }
                 });
                 
-                gameLoop = requestAnimationFrame(update);
+                if (isGameRunning && !isPaused) {
+                    gameLoop = requestAnimationFrame(update);
+                }
             }
             
-            update();
+            gameLoop = requestAnimationFrame(update);
+        }
+        
+        function endGame(state) {
+            isGameRunning = false;
+            document.getElementById('finalScore').textContent = state.score || 0;
+            document.getElementById('gameOver').style.display = 'block';
+            
+            if (gameLoop) {
+                cancelAnimationFrame(gameLoop);
+                gameLoop = null;
+            }
         }
         
         document.addEventListener('keydown', async (e) => {
-            if (!gameState || gameState.game_over) return;
+            if (!isGameRunning || isPaused || !gameState || gameState.game_over) return;
             
             switch(e.key) {
                 case 'ArrowLeft': await sendMove('left'); break;

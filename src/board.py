@@ -78,6 +78,7 @@ class GameBoard:
         if not self._is_valid_position(self.current_piece, 0, 0):
             self.game_over = True
             self.monitor.record_guardrail_trigger('spawn_collision', 'critical')
+            return None
         
         return self.current_piece
     
@@ -175,8 +176,12 @@ class GameBoard:
         if lines_cleared > 0:
             self._update_score(lines_cleared)
         
-        # 生成新方块
-        self.spawn_piece()
+        # 生成新方块（如果游戏未结束）
+        if not self.game_over:
+            new_piece = self.spawn_piece()
+            if new_piece is None:
+                # 出生点被占，游戏结束
+                self.game_over = True
     
     def _clear_lines(self) -> int:
         """消除完整的行"""
