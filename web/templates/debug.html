@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 俄罗斯方块 - 调试版</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+            color: #fff;
+            font-family: monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .debug-info {
+            background: rgba(0,0,0,0.8);
+            border: 2px solid #0f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            max-width: 600px;
+            width: 100%;
+        }
+        .debug-info h3 { color: #0f0; margin-bottom: 10px; }
+        .debug-info pre { 
+            background: #000; 
+            padding: 10px; 
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background: #00f3ff;
+            color: #000;
+        }
+        button:hover { background: #00ff41; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .status.ok { background: rgba(0,255,0,0.2); border: 1px solid #0f0; }
+        .status.error { background: rgba(255,0,0,0.2); border: 1px solid #f00; }
+        #gameCanvas {
+            border: 2px solid #00f3ff;
+            background: rgba(10,10,20,0.9);
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 AI 俄罗斯方块 - 调试模式</h1>
+    
+    <div class="debug-info">
+        <h3>🔍 系统状态</h3>
+        <div id="status"></div>
+        <button onclick="testAPI()">测试 API</button>
+        <button onclick="initGame()">初始化游戏</button>
+        <button onclick="clearLog()">清空日志</button>
+    </div>
+    
+    <canvas id="gameCanvas" width="240" height="480"></canvas>
+    
+    <div class="debug-info">
+        <h3>📋 操作日志</h3>
+        <pre id="log">等待操作...</pre>
+    </div>
+
+    <script>
+        const logEl = document.getElementById('log');
+        const statusEl = document.getElementById('status');
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let gameState = null;
+        
+        function log(msg, type='info') {
+            const time = new Date().toLocaleTimeString();
+            const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+            logEl.innerHTML += `[${time}] ${icon} ${msg}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(`${icon} ${msg}`);
+        }
+        
+        function setStatus(msg, ok) {
+            statusEl.innerHTML = `<div class="status ${ok ? 'ok' : 'error'}">${msg}</div>`;
+        }
+        
+        async function testAPI() {
+            try {
+                log('测试 API 连接...');
+                const res = await fetch('/api/state', {
+                    signal: AbortSignal.timeout(5000)
+                });
+                const data = await res.json();
+                
+                if (data.error) {
+                    log(`API 响应：${data.error}`, 'error');
+                    setStatus(`API 正常，但游戏未初始化：${data.error}`, false);
+                } else {
+                    log('API 连接成功！', 'success');
+                    setStatus('API 连接正常', true);
+                }
+            } catch (e) {
+                log(`API 测试失败：${e.message}`, 'error');
+                setStatus(`API 连接失败：${e.message}`, false);
+            }
+        }
+        
+        async function initGame() {
+            try {
+                log('正在初始化游戏...');
+                const res = await fetch('/api/init', {
+                    method: 'POST',
+                    signal: AbortSignal.timeout(5000)
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    log(`游戏初始化成功！Session: ${data.session_id}`, 'success');
+                    setStatus('游戏已初始化，可以开始玩了！', true);
+                    gameState = data;
+                    renderEmptyBoard();
+                } else {
+                    log(`初始化失败：${data.error}`, 'error');
+                    setStatus(`初始化失败：${data.error}`, false);
+                }
+            } catch (e) {
+                log(`初始化异常：${e.message}`, 'error');
+                setStatus(`初始化失败：${e.message}`, false);
+            }
+        }
+        
+        function renderEmptyBoard() {
+            ctx.fillStyle = '#0a0a0f';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.strokeStyle = '#1e1e32';
+            for (let x = 0; x <= 10; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * 24, 0);
+                ctx.lineTo(x * 24, 480);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= 20; y++) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * 24);
+                ctx.lineTo(240, y * 24);
+                ctx.stroke();
+            }
+            
+            log('游戏面板已渲染', 'success');
+        }
+        
+        function clearLog() {
+            logEl.innerHTML = '';
+            log('日志已清空');
+        }
+        
+        // 页面加载时自动测试
+        window.onload = () => {
+            log('页面加载完成');
+            log('浏览器：' + navigator.userAgent.substring(0, 50));
+            setStatus('页面已加载，请点击"测试 API"按钮', false);
+            renderEmptyBoard();
+        };
+    </script>
+</body>
+</html>

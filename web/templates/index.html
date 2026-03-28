@@ -583,7 +583,7 @@
         let isGameRunning = false;
         let lastRenderedState = null;
         let lastMoveTime = 0;
-        const MOVE_THROTTLE = 80; // 操作节流 80ms
+        const MOVE_THROTTLE = 50; // 操作节流 50ms (从 80ms 降低)
         
         // 触摸控制变量
         let touchStartX = 0;
@@ -872,20 +872,23 @@
         };
         
         async function sendMove(action) {
-            if (!isGameRunning || isPaused) return null;
+            if (!isGameRunning || isPaused) {
+                console.warn(`Cannot move: gameRunning=${isGameRunning}, paused=${isPaused}`);
+                return null;
+            }
             
-            // 节流控制，防止过快操作
+            // 节流控制（降低到 50ms）
             const now = Date.now();
             if (now - lastMoveTime < MOVE_THROTTLE) {
-                return null;
+                return null; // 静默跳过，不报错
             }
             lastMoveTime = now;
             
-            // 重试机制
-            for (let i = 0; i < 3; i++) {
+            // 简化版：只重试 1 次，减少延迟
+            for (let i = 0; i < 2; i++) {
                 try {
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 3000);
+                    const timeoutId = setTimeout(() => controller.abort(), 2000); // 降低到 2s
                     
                     const response = await fetch('/api/move', {
                         method: 'POST',
@@ -914,14 +917,13 @@
                     
                     return result;
                 } catch (error) {
-                    console.warn(`Send move '${action}' failed (attempt ${i+1}/3):`, error.message);
-                    if (i === 2) {
-                        console.error('All send move attempts failed');
-                        // 显示错误提示
-                        showNetworkError();
+                    console.warn(`Move '${action}' failed (attempt ${i+1}/2):`, error.message);
+                    if (i === 1) {
+                        // 第二次失败，显示警告但不阻塞游戏
+                        console.error('Move failed, but game continues');
                         return null;
                     }
-                    await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(2, i)));
+                    await new Promise(resolve => setTimeout(resolve, 50)); // 快速重试
                 }
             }
             return null;
