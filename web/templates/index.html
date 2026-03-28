@@ -399,6 +399,7 @@
             <button class="btn-icon btn-start" ontouchstart="handleTouch(event, 'start')" onclick="initGame()" title="开始游戏">▶️</button>
             <button class="btn-icon btn-pause" ontouchstart="handleTouch(event, 'pause')" onclick="togglePause()" title="暂停">⏸️</button>
             <button class="btn-icon btn-stop" ontouchstart="handleTouch(event, 'stop')" onclick="stopGame()" title="停止">⏹️</button>
+            <button class="btn-icon" ontouchstart="handleTouch(event, 'sound')" onclick="handleTouch(event, 'sound')" title="音效开关">🔊</button>
             <button class="btn-icon" ontouchstart="handleTouch(event, 'help')" onclick="showHelpModal()" title="玩法说明">❓</button>
         </div>
     </div>
@@ -474,6 +475,61 @@
         const ctx = canvas.getContext('2d');
         const BOARD_WIDTH = 10;
         const BOARD_HEIGHT = 20;
+        
+        // 音效管理器
+        const SoundManager = {
+            enabled: true,
+            sounds: {},
+            
+            init() {
+                // 创建合成器音效（无需外部文件）
+                this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // 定义音效频率和类型
+                this.sounds = {
+                    move: { freq: 300, type: 'sine', duration: 0.05 },
+                    rotate: { freq: 400, type: 'square', duration: 0.08 },
+                    drop: { freq: [600, 400], type: 'triangle', duration: 0.15 },
+                    clear: { freq: [523, 659, 784, 1047], type: 'square', duration: 0.3 },
+                    gameOver: { freq: [400, 300, 200, 100], type: 'sawtooth', duration: 0.6 }
+                };
+            },
+            
+            play(soundName) {
+                if (!this.enabled || !this.audioCtx) return;
+                
+                const sound = this.sounds[soundName];
+                if (!sound) return;
+                
+                const now = this.audioCtx.currentTime;
+                const frequencies = Array.isArray(sound.freq) ? sound.freq : [sound.freq];
+                
+                frequencies.forEach((freq, index) => {
+                    const oscillator = this.audioCtx.createOscillator();
+                    const gainNode = this.audioCtx.createGain();
+                    
+                    oscillator.type = sound.type;
+                    oscillator.frequency.value = freq;
+                    
+                    // 包络控制
+                    const startTime = now + (index * 0.05);
+                    gainNode.gain.setValueAtTime(0, startTime);
+                    gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.02);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + sound.duration);
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioCtx.destination);
+                    
+                    oscillator.start(startTime);
+                    oscillator.stop(startTime + sound.duration);
+                });
+            },
+            
+            toggle() {
+                this.enabled = !this.enabled;
+                return this.enabled;
+            }
+        };
         
         let gameState = null;
         let gameLoop = null;
@@ -559,11 +615,18 @@
             else if (action === 'stop') stopGame();
             else if (action === 'pause') togglePause();
             else if (action === 'help') showHelpModal();
+            else if (action === 'sound') {
+                const enabled = SoundManager.toggle();
+                event.target.textContent = enabled ? '🔊' : '🔇';
+            }
             else if (isGameRunning && !isPaused) sendMove(action);
         }
         
         async function initGame() {
             try {
+                // 初始化音效（需要用户交互后才能播放）
+                if (!SoundManager.audioCtx) SoundManager.init();
+                
                 const response = await fetch('/api/init', { method: 'POST' });
                 const data = await response.json();
                 if (data.success) {
@@ -571,8 +634,9 @@
                     document.getElementById('pauseOverlay').style.display = 'none';
                     isPaused = false;
                     isGameRunning = true;
-                    dropInterval = 1000; // 重置速度
+                    dropInterval = 1000;
                     startGameLoop();
+                    SoundManager.play('drop');
                 }
             } catch (error) {
                 console.error('Failed to init game:', error);
@@ -662,6 +726,14 @@
                 });
             }
             
+            // 检测行数变化，播放消除音效
+            if (gameState && state.lines > gameState.lines) {
+                const linesCleared = state.lines - gameState.lines;
+                if (linesCleared > 0) {
+                    SoundManager.play('clear');
+                }
+            }
+            
             document.getElementById('score').textContent = state.score || 0;
             document.getElementById('lines').textContent = state.lines || 0;
             document.getElementById('level').textContent = state.level || 1;
@@ -692,7 +764,17 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action })
                 });
-                return await response.json();
+                const result = await response.json();
+                
+                // 播放音效
+                if (result && result.success !== false) {
+                    if (action === 'left' || action === 'right') SoundManager.play('move');
+                    else if (action === 'rotate') SoundManager.play('rotate');
+                    else if (action === 'drop') SoundManager.play('drop');
+                    else if (action === 'down') SoundManager.play('move');
+                }
+                
+                return result;
             } catch (error) {
                 console.error('Failed to send move:', error);
                 return null;
@@ -745,6 +827,7 @@
             isGameRunning = false;
             document.getElementById('finalScore').textContent = state.score || 0;
             document.getElementById('gameOver').style.display = 'block';
+            SoundManager.play('gameOver');
             
             if (gameLoop) {
                 cancelAnimationFrame(gameLoop);
