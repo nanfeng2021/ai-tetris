@@ -1,79 +1,33 @@
-// AI 俄罗斯方块 - 简化版（移除底部按键，点击旋转）
+// AI 俄罗斯方块 - 优化版（客户端预测 + 服务端验证）
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const BOARD_WIDTH = 10;
 const BOARD_HEIGHT = 20;
+const CELL_SIZE = canvas.width / BOARD_WIDTH;
+
+// 方块定义（7 种经典类型）
+const PIECE_TYPES = {
+    'I': { shape: [[1,1,1,1]], color: [0, 243, 255] },
+    'O': { shape: [[1,1],[1,1]], color: [255, 243, 0] },
+    'T': { shape: [[0,1,0],[1,1,1]], color: [170, 0, 255] },
+    'S': { shape: [[0,1,1],[1,1,0]], color: [0, 255, 65] },
+    'Z': { shape: [[1,1,0],[0,1,1]], color: [255, 0, 60] },
+    'J': { shape: [[1,0,0],[1,1,1]], color: [0, 0, 255] },
+    'L': { shape: [[0,0,1],[1,1,1]], color: [255, 128, 0] }
+};
+
+const COLORS = {
+    'I': [0, 243, 255],
+    'O': [255, 243, 0],
+    'T': [170, 0, 255],
+    'S': [0, 255, 65],
+    'Z': [255, 0, 60],
+    'J': [0, 0, 255],
+    'L': [255, 128, 0]
+};
 
 // 音效管理器
 const SoundManager = {
-    enabled: true,
-    audioCtx: null,
-    sounds: {
-        move: { freq: 300, type: 'sine', duration: 0.05 },
-        rotate: { freq: 400, type: 'square', duration: 0.08 },
-        drop: { freq: [600, 400], type: 'triangle', duration: 0.15 },
-        clear: { freq: [523, 659, 784, 1047], type: 'square', duration: 0.3 },
-        gameOver: { freq: [400, 300, 200, 100], type: 'sawtooth', duration: 0.6 }
-    },
-    
-    init() {
-        if (!this.audioCtx) {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if (AudioContext) {
-                this.audioCtx = new AudioContext();
-                console.log('✅ Web Audio API initialized');
-            } else {
-                console.warn('⚠️ Web Audio API not supported');
-                this.enabled = false;
-            }
-        }
-    },
-    
-    play(soundName) {
-        if (!this.enabled || !this.audioCtx) return;
-        
-        if (this.audioCtx.state === 'suspended') {
-            this.audioCtx.resume().catch(() => {});
-        }
-        
-        const sound = this.sounds[soundName];
-        if (!sound) return;
-        
-        try {
-            const now = this.audioCtx.currentTime;
-            const frequencies = Array.isArray(sound.freq) ? sound.freq : [sound.freq];
-            
-            frequencies.forEach((freq, index) => {
-                const oscillator = this.audioCtx.createOscillator();
-                const gainNode = this.audioCtx.createGain();
-                
-                oscillator.type = sound.type;
-                oscillator.frequency.value = freq;
-                
-                const startTime = now + (index * 0.05);
-                gainNode.gain.setValueAtTime(0, startTime);
-                gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.02);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + sound.duration);
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(this.audioCtx.destination);
-                
-                oscillator.start(startTime);
-                oscillator.stop(startTime + sound.duration);
-            });
-        } catch (e) {
-            console.warn('Sound play error:', e.message);
-        }
-    },
-    
-    toggle() {
-        this.enabled = !this.enabled;
-        if (this.enabled && this.audioCtx?.state === 'suspended') {
-            this.audioCtx.resume();
-        }
-        return this.enabled;
-    }
-};
 
 let gameState = null;
 let gameLoop = null;
@@ -82,6 +36,8 @@ let dropCounter = 0;
 let isPaused = false;
 let isGameRunning = false;
 let lastRenderedState = null;
+let lastMoveTime = 0;
+const MOVE_THROTTLE = 80; // 移动节流 (ms) - 降低延迟
 
 // 触摸手势支持
 let touchStartX = 0;
@@ -293,25 +249,35 @@ async function fetchGameState(retries = 3) {
 function render(state) {
     const CELL_SIZE = getCellSize();
     
-    // 检查是否需要重新渲染
-    const needsRender = !lastRenderedState || 
+    // 快速检查：先比较简单字段
+    if (!lastRenderedState || 
         lastRenderedState.score !== state.score || 
         lastRenderedState.lines !== state.lines ||
         lastRenderedState.level !== state.level ||
-        JSON.stringify(lastRenderedState.board) !== JSON.stringify(state.board) ||
-        JSON.stringify(lastRenderedState.current_piece) !== JSON.stringify(state.current_piece);
-    
-    if (!needsRender) {
-        return; // 状态无变化，跳过渲染
+        lastRenderedState.game_over !== state.game_over) {
+        // 分数/行数/等级变化，需要渲染
+    } else if (lastRenderedState.current_piece && state.current_piece &&
+        lastRenderedState.current_piece.x === state.current_piece.x &&
+        lastRenderedState.current_piece.y === state.current_piece.y &&
+        lastRenderedState.current_piece.type === state.current_piece.type) {
+        // 方块位置没变，跳过渲染
+        return;
+    } else if (!lastRenderedState.current_piece && !state.current_piece) {
+        // 都没有方块，跳过
+        return;
     }
     
-    // 保存当前状态用于下次比较
+    // 深度复制状态用于下次比较
     lastRenderedState = {
         score: state.score,
         lines: state.lines,
         level: state.level,
-        board: state.board ? state.board.map(row => [...row]) : null,
-        current_piece: state.current_piece ? {...state.current_piece} : null
+        game_over: state.game_over,
+        current_piece: state.current_piece ? {
+            x: state.current_piece.x,
+            y: state.current_piece.y,
+            type: state.current_piece.type
+        } : null
     };
     
     // 清空画布
@@ -333,6 +299,7 @@ function render(state) {
         ctx.stroke();
     }
     
+    // 绘制已固定的方块
     if (state.board) {
         for (let y = 0; y < BOARD_HEIGHT; y++) {
             for (let x = 0; x < BOARD_WIDTH; x++) {
@@ -343,6 +310,7 @@ function render(state) {
         }
     }
     
+    // 绘制当前下落的方块
     if (state.current_piece) {
         const color = COLORS[state.current_piece.type];
         state.current_piece.shape.forEach((row, rowIndex) => {
@@ -365,9 +333,8 @@ function render(state) {
         }
     }
     
+    // 更新 UI
     document.getElementById('score').textContent = state.score || 0;
-    document.getElementById('lines').textContent = state.lines || 0;
-    document.getElementById('level').textContent = state.level || 1;
 }
 
 function drawCell(x, y, color, size) {
@@ -391,6 +358,13 @@ const COLORS = {
 async function sendMove(action) {
     if (!isGameRunning || isPaused) return null;
     
+    // 节流：防止过快发送请求
+    const now = Date.now();
+    if (now - lastMoveTime < MOVE_THROTTLE) {
+        return null;
+    }
+    lastMoveTime = now;
+    
     try {
         const response = await fetch('/api/move', {
             method: 'POST',
@@ -404,6 +378,12 @@ async function sendMove(action) {
         const result = await response.json();
         
         if (result && result.success !== false) {
+            // 立即更新本地状态，无需等待下次 fetch
+            if (result.state) {
+                gameState = result.state;
+                render(gameState);
+            }
+            
             if (action === 'left' || action === 'right' || action === 'down') {
                 SoundManager.play('move');
             } else if (action === 'rotate') {
@@ -426,6 +406,8 @@ function startGameLoop() {
     lastTime = performance.now();
     dropCounter = 0;
     gameState = null;
+    let fetchCounter = 0;
+    const FETCH_INTERVAL = 3; // 每 3 次移动 fetch 一次完整状态
     
     console.log('🎮 游戏循环已启动');
     
@@ -442,24 +424,23 @@ function startGameLoop() {
         if (dropCounter > currentDropInterval) {
             sendMove('down');
             dropCounter = 0;
-        }
-        
-        fetchGameState().then(state => {
-            if (state) {
-                const oldLevel = gameState?.level || 1;
-                gameState = state;
-                render(state);
-                
-                if (state.game_over) {
-                    console.log('💀 游戏结束');
-                    endGame(state);
-                }
-            } else {
-                console.warn('⚠️ 获取游戏状态失败');
+            fetchCounter++;
+            
+            // 定期同步完整状态（防止本地状态漂移）
+            if (fetchCounter >= FETCH_INTERVAL) {
+                fetchGameState().then(state => {
+                    if (state) {
+                        gameState = state;
+                        render(state);
+                        if (state.game_over) {
+                            console.log('💀 游戏结束');
+                            endGame(state);
+                        }
+                    }
+                });
+                fetchCounter = 0;
             }
-        }).catch(err => {
-            console.error('❌ fetchGameState 错误:', err);
-        });
+        }
         
         if (isGameRunning && !isPaused) {
             gameLoop = requestAnimationFrame(update);

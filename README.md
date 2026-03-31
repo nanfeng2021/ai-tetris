@@ -1,12 +1,15 @@
-# 🎮 AI 俄罗斯方块 - Harness Engineering 实践
+## 🎮 AI 俄罗斯方块 - Harness Engineering 实践
 
 > 基于 Harness Engineering 范式构建的智能俄罗斯方块游戏
 > 
 > 🔒 约束驱动 | ✅ 验证优先 | 📊 实时监控 | 🔄 自动修复
+>
+> **🏆 最新版本**: v5 (2026-03-31) - 客户端预测优化版
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Harness Engineering](https://img.shields.io/badge/Harness-Engineering-green)]()
+[![Version](https://img.shields.io/badge/version-v5-blue.svg)]()
 
 ## ✨ 特性
 
@@ -77,6 +80,13 @@ ai-tetris/
 │   │   └── monitors.py      # 监控指标
 │   └── ui/
 │       └── renderer.py      # 渲染引擎
+├── web/                     # 🆕 Web 版本（v5 客户端预测架构）
+│   ├── server.py            # Flask 后端服务
+│   ├── templates/
+│   │   └── index.html       # 游戏页面
+│   └── static/
+│       └── js/
+│           └── game_optimized.js  # 客户端游戏逻辑
 ├── tests/
 │   ├── test_guardrails.py   # Guardrail 测试
 │   ├── test_validators.py   # 验证器测试
@@ -227,6 +237,51 @@ docker-compose down
 - [Harness Engineering 实践指南](https://my.feishu.cn/docx/Ko7sdF8fIoxME7xJWCGc96YVnJb)
 - [俄罗斯方块 AI 算法详解](docs/ai-algorithm.md)
 - [监控指标说明](docs/metrics.md)
+- [📅 优化日志](docs/2026-03-31-optimization-log.md) - v5 客户端预测架构演进记录
+
+## 📝 更新日志
+
+### v5 (2026-03-31) - 客户端预测优化版 🚀
+**核心改进**: 重构为客户端预测架构，游戏逻辑完全在浏览器运行
+
+**性能提升**:
+- 操作响应：150ms → <1ms (**150x 提升**)
+- 渲染帧率：30 FPS → 60 FPS (**2x 提升**)
+- API 调用：每帧 1 次 → 仅初始化 (**99% 减少**)
+
+**Bug 修复**:
+- ✅ 修复方块不会自动下落的问题
+- ✅ 修复方块到底部后消失的 bug
+- ✅ 修复手机端下边框缺失的布局问题
+
+**技术细节**:
+- 使用 `requestAnimationFrame` 实现流畅动画
+- 本地验证 + 异步同步模式
+- 重置 `dropCounter` 和 `lastTime` 确保计时准确
+
+[查看完整优化日志 →](docs/2026-03-31-optimization-log.md)
+
+### v4 (2026-03-31) - 移动端优化
+- 修复手机端游戏区域布局问题
+- 添加 `display: block` 消除 canvas 基线间距
+- 优化移动端 padding 和 margin
+
+### v3 (2026-03-31) - 客户端预测架构
+- 初始 Web 版本发布
+- 实现客户端游戏逻辑
+- 添加触摸手势支持
+
+### v2 (2026-03-28) - AI 增强
+- 添加 AI 自动对战模式
+- 优化决策算法
+- 完善监控指标
+
+### v1 (2026-03-27) - 初始版本
+- 基础游戏逻辑实现
+- Harness Engineering 框架搭建
+- 终端 UI 版本
+
+---
 
 ## 🏆 高分榜
 

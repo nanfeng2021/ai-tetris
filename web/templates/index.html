@@ -114,9 +114,9 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            flex: 1;
             width: 100%;
             max-width: 280px;
+            margin: 10px auto;
             cursor: pointer;
         }
         
@@ -127,6 +127,7 @@
             max-width: 100%;
             height: auto;
             image-rendering: pixelated;
+            display: block;
         }
         
         .game-area:active {
@@ -353,41 +354,58 @@
         
         /* H5 适配 */
         @media (max-width: 480px) {
+            body {
+                padding: 5px;
+                overflow-x: hidden;
+            }
+            
             .top-bar {
-                max-width: 280px;
-                padding: 8px;
+                max-width: 240px;
+                padding: 5px;
+                margin-bottom: 5px;
             }
             
             .score-value {
-                font-size: 20px;
+                font-size: 18px;
             }
             
             .btn-icon {
-                width: 36px;
-                height: 36px;
-                font-size: 16px;
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
             }
             
             .game-area {
+                max-width: 240px;
+                margin: 5px auto;
+            }
+            
+            canvas {
                 max-width: 240px;
             }
             
             .modal-content {
                 width: 280px;
-                padding: 20px;
+                padding: 15px;
             }
             
             .game-over {
                 min-width: 240px;
-                padding: 25px;
+                padding: 20px;
             }
             
             .game-over h2 {
-                font-size: 26px;
+                font-size: 24px;
             }
             
             .game-over .stat-value {
-                font-size: 24px;
+                font-size: 20px;
+            }
+            
+            #helpTip {
+                font-size: 11px !important;
+                padding: 8px 15px !important;
+                bottom: 5px !important;
             }
         }
     </style>
@@ -496,6 +514,6 @@
         </div>
     </div>
     
-    <script src="/static/js/game.js"></script>
+    <script src="/static/js/game_optimized.js?v=5"></script>
 </body>
 </html>
