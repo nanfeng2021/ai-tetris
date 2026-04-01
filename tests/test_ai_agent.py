@@ -65,21 +65,15 @@ class TestAIAgent:
 
     def test_calculate_holes(self):
         """测试空洞计算"""
-        # 创建一个有空洞的面板
+        # 创建一个简单的洞场景
         test_board = [[None for _ in range(10)] for _ in range(20)]
-
-        # 底部填满
-        for x in range(10):
-            test_board[19][x] = "I"
-
-        # 中间留一个洞
-        test_board[18][5] = None
-        for x in range(10):
-            if x != 5:
-                test_board[18][x] = "I"
-
+        
+        # x=5 列：y=10 有方块，y=11 是空的 = 1 个洞
+        test_board[10][5] = "X"
+        # y=11 及以后都是洞
+        
         holes = self.agent._calculate_holes(test_board)
-        assert holes >= 1
+        assert holes == 9  # y=11 到 y=19 共 9 个洞
 
     def test_calculate_bumpiness(self):
         """测试不平整度计算"""

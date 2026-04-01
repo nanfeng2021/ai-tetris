@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from board import BOARD_HEIGHT, BOARD_WIDTH, GameBoard
 from harness.monitors import Monitors
-from pieces import PieceType
+from pieces import Piece, PieceType
 
 
 class TestGameBoard:
@@ -122,7 +122,9 @@ class TestGameBoard:
                     break
 
         assert locked
-        assert self.board.current_piece is None  # 锁定后当前方块应为 None
+        # lock_piece 会生成新方块，所以 current_piece 应该是新的 Piece 对象
+        assert self.board.current_piece is not None
+        assert isinstance(self.board.current_piece, Piece)
 
     def test_clear_lines(self):
         """测试消除行"""
