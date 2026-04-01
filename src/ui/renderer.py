@@ -8,6 +8,7 @@ import sys
 
 import pygame
 
+# type: ignore[E402]
 sys.path.insert(0, os.path.dirname(__file__))
 
 from pieces import BOARD_HEIGHT, BOARD_WIDTH, PIECE_COLORS, PieceType

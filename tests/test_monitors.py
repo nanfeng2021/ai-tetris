@@ -4,6 +4,7 @@
 
 import sys
 
+# type: ignore[E402]
 sys.path.insert(0, "/root/.openclaw/workspace/ai-tetris/src")
 
 from harness.monitors import Monitors

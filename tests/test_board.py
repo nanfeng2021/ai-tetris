@@ -7,6 +7,7 @@ import sys
 
 import pytest
 
+# type: ignore[E402]
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from board import BOARD_HEIGHT, BOARD_WIDTH, GameBoard

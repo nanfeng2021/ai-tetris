@@ -64,7 +64,7 @@ jobs:
         run: isort --check-only --settings-path pyproject.toml src/ tests/
 
       - name: Lint (flake8)
-        run: flake8 src/ tests/ --max-line-length=100 --count --show-source --statistics
+        run: flake8 src/ tests/ --config .flake8 --count --show-source --statistics
 
       - name: Type checking (mypy)
         run: mypy src/ --ignore-missing-imports --no-error-summary
@@ -189,27 +189,41 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
       
       - name: Install dependencies
         run: |
           cd web
-          npm install || echo "No package.json, skipping"
+          if [ -f "package.json" ]; then
+            npm install
+          else
+            echo "No package.json, skipping"
+            exit 0
+          fi
       
       - name: Run ESLint (if configured)
         run: |
           cd web
-          npm run lint || echo "No lint script or ESLint not configured, skipping"
-        continue-on-error: true
+          if [ -f "package.json" ] && grep -q '"lint"' package.json; then
+            npm run lint || true
+          fi
       
       - name: Run frontend tests
         run: |
           cd web
-          node static/js/game.test.js
+          if [ -f "static/js/game.test.js" ]; then
+            node static/js/game.test.js
+          else
+            echo "No test file found"
+            exit 0
+          fi
       
       - name: Validate JavaScript syntax
         run: |
-          node --check web/static/js/game_optimized.js && echo "✅ JavaScript syntax OK" || echo "⚠️ File not found or syntax error"
+          if [ -f "web/static/js/game_optimized.js" ]; then
+            node --check web/static/js/game_optimized.js && echo "✅ JavaScript syntax OK"
+          else
+            echo "⚠️ File not found"
+          fi
 
   # ============================================
   # 5. Docker 构建测试

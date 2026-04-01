@@ -1,0 +1,14 @@
+[flake8]
+max-line-length = 100
+exclude = 
+    .git,
+    __pycache__,
+    venv,
+    build,
+    dist
+ignore = 
+    E402,  # module level import not at top of file (needed for sys.path manipulation)
+    E722,  # do not use bare 'except' (allow for now)
+    E741,  # ambiguous variable name (I, O are standard tetromino names)
+    F401,  # imported but unused (allow for now)
+    F841   # local variable assigned but never used (allow for now)

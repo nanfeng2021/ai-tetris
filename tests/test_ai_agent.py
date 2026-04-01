@@ -8,6 +8,7 @@ import time
 
 import pytest
 
+# type: ignore[E402]
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from ai.agent import AIAgent

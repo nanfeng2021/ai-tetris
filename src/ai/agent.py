@@ -10,9 +10,13 @@ import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
+# 添加项目路径到 sys.path
+# type: ignore[E402]
 sys.path.insert(0, os.path.dirname(__file__))
+# type: ignore[E402]
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
+# 本地导入
 from board import GameBoard
 from harness.guardrails import Guardrails
 from harness.monitors import Monitors

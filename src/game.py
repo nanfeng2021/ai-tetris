@@ -8,6 +8,7 @@ import os
 import sys
 import time
 
+# type: ignore[E402]
 sys.path.insert(0, os.path.dirname(__file__))
 
 from board import GameBoard
