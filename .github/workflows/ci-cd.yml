@@ -166,12 +166,12 @@ jobs:
       
       - name: Run Guardrail tests (100% coverage required)
         run: |
-          coverage run -m pytest tests/test_guardrails.py -v
+          coverage run --source=src/harness -m pytest tests/test_guardrails.py -v
           coverage report --include="src/harness/guardrails.py" --fail-under=100
       
       - name: Run Validator tests (100% coverage required)
         run: |
-          coverage run -m pytest tests/test_validators.py -v
+          coverage run --source=src/harness -m pytest tests/test_validators.py -v
           coverage report --include="src/harness/validators.py" --fail-under=100
       
       - name: Run Monitor tests
