@@ -145,9 +145,31 @@ def test_run_all_guardrails():
     print("测试 6: 批量运行 Guardrails")
     print("=" * 50)
 
+    # 测试 1: 边界检查
     results = run_all_guardrails(x=2, y=3, piece_width=2, piece_height=2)
     assert len(results) >= 1, "应该至少有一个结果"
-    print(f"✅ 批量运行完成，共{len(results)}个检查结果")
+    print(f"✅ 边界检查：共{len(results)}个检查结果")
+
+    # 测试 2: 碰撞检查（需要 board 和 piece）
+    from board import GameBoard
+    from pieces import PieceFactory
+    
+    board = GameBoard()
+    factory = PieceFactory()
+    piece = factory.get_next_piece()
+    
+    results = run_all_guardrails(
+        x=3, y=0, 
+        board=board.board, 
+        piece=piece
+    )
+    assert len(results) >= 2, "应该有边界和碰撞检查结果"
+    print(f"✅ 碰撞检查：共{len(results)}个检查结果")
+
+    # 测试 3: 游戏状态检查
+    results = run_all_guardrails(score=100, lines=5, level=2)
+    assert len(results) >= 1, "应该有游戏状态检查结果"
+    print(f"✅ 游戏状态检查：共{len(results)}个检查结果")
 
     for r in results:
         status = "✅" if r.passed else "❌"

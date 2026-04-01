@@ -140,10 +140,15 @@ def test_run_all_validators():
     board = [[None for _ in range(10)] for _ in range(20)]
     piece = [[True, True], [True, True]]
 
+    # 测试 1: 基本验证
     results = run_all_validators(board=board, piece_shape=piece, score=1000, lines=5, level=2)
-
     assert len(results) >= 3, f"应该至少有 3 个结果，实际{len(results)}"
-    print(f"✅ 批量运行完成，共{len(results)}个验证结果")
+    print(f"✅ 基本验证：共{len(results)}个验证结果")
+
+    # 测试 2: 移动序列验证
+    results = run_all_validators(moves=["LEFT", "RIGHT", "ROTATE"])
+    assert len(results) >= 1, "应该有移动序列验证结果"
+    print(f"✅ 移动序列验证：共{len(results)}个验证结果")
 
     for r in results:
         status_icon = (
