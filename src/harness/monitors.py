@@ -7,8 +7,14 @@ import time
 from datetime import datetime
 from typing import Dict, Optional
 
-from prometheus_client import (CONTENT_TYPE_LATEST, CollectorRegistry, Counter,
-                               Gauge, Histogram, generate_latest)
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    CollectorRegistry,
+    Counter,
+    Gauge,
+    Histogram,
+    generate_latest,
+)
 
 # 创建独立的注册表
 registry = CollectorRegistry()
