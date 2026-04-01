@@ -171,6 +171,9 @@ class GameBoard:
         if result.status.value == "failed":
             raise ValueError(f"面板状态异常：{result.message}")
 
+        # 清除当前方块
+        self.current_piece = None
+
         # 检查并消除完整的行
         lines_cleared = self._clear_lines()
 
