@@ -100,9 +100,7 @@ class GameBoard:
             return False
 
         # Guardrail: 碰撞检测
-        collision_result = Guardrails.validate_collision(
-            self.board, piece, new_x, new_y
-        )
+        collision_result = Guardrails.validate_collision(self.board, piece, new_x, new_y)
         if not collision_result.passed:
             self.monitor.record_guardrail_trigger("collision_detection", "warning")
             return False

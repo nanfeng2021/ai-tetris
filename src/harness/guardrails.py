@@ -51,14 +51,10 @@ class Guardrails:
                 message=f"垂直越界：y={y}, height={piece_height}",
                 severity="warning",
             )
-        return GuardrailResult(
-            passed=True, rule=GuardrailType.BOUNDARY, message="边界检查通过"
-        )
+        return GuardrailResult(passed=True, rule=GuardrailType.BOUNDARY, message="边界检查通过")
 
     @staticmethod
-    def validate_collision(
-        board: List[List[str]], piece, x: int, y: int
-    ) -> GuardrailResult:
+    def validate_collision(board: List[List[str]], piece, x: int, y: int) -> GuardrailResult:
         """碰撞检测：方块不能重叠"""
         for row_idx, row in enumerate(piece.shape):
             for col_idx, cell in enumerate(row):
@@ -75,9 +71,7 @@ class Guardrails:
                                 severity="warning",
                             )
 
-        return GuardrailResult(
-            passed=True, rule=GuardrailType.COLLISION, message="碰撞检测通过"
-        )
+        return GuardrailResult(passed=True, rule=GuardrailType.COLLISION, message="碰撞检测通过")
 
     @staticmethod
     def validate_game_state(score: int, lines: int, level: int) -> GuardrailResult:
@@ -104,14 +98,10 @@ class Guardrails:
                 severity="critical",
             )
 
-        return GuardrailResult(
-            passed=True, rule=GuardrailType.GAME_STATE, message="游戏状态正常"
-        )
+        return GuardrailResult(passed=True, rule=GuardrailType.GAME_STATE, message="游戏状态正常")
 
     @staticmethod
-    def validate_ai_decision_time(
-        decision_time: float, timeout: float = 2.0
-    ) -> GuardrailResult:
+    def validate_ai_decision_time(decision_time: float, timeout: float = 2.0) -> GuardrailResult:
         """AI 决策超时检查"""
         if decision_time > timeout:
             return GuardrailResult(

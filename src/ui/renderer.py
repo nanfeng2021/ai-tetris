@@ -203,9 +203,7 @@ class GameRenderer:
         score_text = self.font_medium.render("SCORE", True, COLORS["neon_cyan"])
         self.screen.blit(score_text, (INFO_PANEL_X, y_offset))
 
-        score_value = self.font_large.render(
-            str(self.board.score), True, COLORS["text"]
-        )
+        score_value = self.font_large.render(str(self.board.score), True, COLORS["text"])
         self.screen.blit(score_value, (INFO_PANEL_X, y_offset + 40))
 
         # 行数
@@ -213,9 +211,7 @@ class GameRenderer:
         lines_text = self.font_medium.render("LINES", True, COLORS["neon_green"])
         self.screen.blit(lines_text, (INFO_PANEL_X, y_offset))
 
-        lines_value = self.font_large.render(
-            str(self.board.lines), True, COLORS["text"]
-        )
+        lines_value = self.font_large.render(str(self.board.lines), True, COLORS["text"])
         self.screen.blit(lines_value, (INFO_PANEL_X, y_offset + 40))
 
         # 等级
@@ -223,9 +219,7 @@ class GameRenderer:
         level_text = self.font_medium.render("LEVEL", True, COLORS["neon_pink"])
         self.screen.blit(level_text, (INFO_PANEL_X, y_offset))
 
-        level_value = self.font_large.render(
-            str(self.board.level), True, COLORS["text"]
-        )
+        level_value = self.font_large.render(str(self.board.level), True, COLORS["text"])
         self.screen.blit(level_value, (INFO_PANEL_X, y_offset + 40))
 
         # 操作说明
@@ -263,9 +257,7 @@ class GameRenderer:
         self.screen.blit(game_over_text, text_rect)
 
         # 最终分数
-        final_score = self.font_medium.render(
-            f"Score: {self.board.score}", True, COLORS["text"]
-        )
+        final_score = self.font_medium.render(f"Score: {self.board.score}", True, COLORS["text"])
         score_rect = final_score.get_rect(
             center=(
                 GRID_OFFSET_X + BOARD_WIDTH * CELL_SIZE // 2,

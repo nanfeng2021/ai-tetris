@@ -87,14 +87,10 @@ PIECE_DROP_LATENCY = Histogram(
 # ========== Gauge 指标（瞬时值）==========
 
 # 当前分数
-CURRENT_SCORE = Gauge(
-    "tetris_current_score", "Current game score", ["game_id"], registry=registry
-)
+CURRENT_SCORE = Gauge("tetris_current_score", "Current game score", ["game_id"], registry=registry)
 
 # 当前等级
-CURRENT_LEVEL = Gauge(
-    "tetris_current_level", "Current game level", ["game_id"], registry=registry
-)
+CURRENT_LEVEL = Gauge("tetris_current_level", "Current game level", ["game_id"], registry=registry)
 
 # 当前行数
 CURRENT_LINES = Gauge(
@@ -102,9 +98,7 @@ CURRENT_LINES = Gauge(
 )
 
 # 在线玩家数
-ACTIVE_PLAYERS = Gauge(
-    "tetris_active_players", "Number of active players", registry=registry
-)
+ACTIVE_PLAYERS = Gauge("tetris_active_players", "Number of active players", registry=registry)
 
 # AI 状态
 AI_STATUS = Gauge(

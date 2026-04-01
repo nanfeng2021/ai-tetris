@@ -137,9 +137,7 @@ class AIAgent:
             for x in range(-2, self.board.width - piece.width + 2):
                 # 验证位置是否可达
                 if self._is_position_reachable(x, rotation):
-                    moves.append(
-                        {"x": x, "rotation": rotation, "piece_type": piece.type.value}
-                    )
+                    moves.append({"x": x, "rotation": rotation, "piece_type": piece.type.value})
 
         return moves
 
@@ -237,9 +235,7 @@ class AIAgent:
 
         return best_candidate
 
-    def _simulate_placement(
-        self, target_x: int, rotation: int
-    ) -> Optional[List[List[str]]]:
+    def _simulate_placement(self, target_x: int, rotation: int) -> Optional[List[List[str]]]:
         """模拟方块放置后的面板"""
         simulated = [row[:] for row in self.board.board]
         piece = self.board.current_piece
@@ -271,10 +267,7 @@ class AIAgent:
                             can_drop = False
                             break
 
-                        if (
-                            0 <= check_y < self.board.height
-                            and 0 <= check_x < self.board.width
-                        ):
+                        if 0 <= check_y < self.board.height and 0 <= check_x < self.board.width:
                             if simulated[check_y][check_x] is not None:
                                 can_drop = False
                                 break
@@ -363,9 +356,7 @@ class AIAgent:
             for y in range(self.board.height):
                 if board[y][x] is None:
                     # 检查两侧是否有方块
-                    left_blocked = x == 0 or (
-                        y < self.board.height and board[y][x - 1] is not None
-                    )
+                    left_blocked = x == 0 or (y < self.board.height and board[y][x - 1] is not None)
                     right_blocked = x == self.board.width - 1 or (
                         y < self.board.height and board[y][x + 1] is not None
                     )
@@ -409,8 +400,7 @@ class AIAgent:
         """计算着陆高度"""
         for y in range(self.board.height):
             if any(
-                board[y][x] is not None
-                for x in range(piece_x, min(piece_x + 4, self.board.width))
+                board[y][x] is not None for x in range(piece_x, min(piece_x + 4, self.board.width))
             ):
                 return self.board.height - y
         return 0

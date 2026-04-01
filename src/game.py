@@ -153,9 +153,7 @@ class TetrisGame:
 
 def main():
     """主函数"""
-    parser = argparse.ArgumentParser(
-        description="AI 俄罗斯方块 - Harness Engineering 实践"
-    )
+    parser = argparse.ArgumentParser(description="AI 俄罗斯方块 - Harness Engineering 实践")
     parser.add_argument(
         "--mode",
         type=str,
