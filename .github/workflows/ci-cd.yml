@@ -64,7 +64,11 @@ jobs:
         run: isort --check-only --settings-path pyproject.toml src/ tests/
 
       - name: Lint (flake8)
-        run: flake8 src/ tests/ --config .flake8 --count --show-source --statistics
+        run: |
+          echo "🔍 Running flake8 with .flake8 config..."
+          cat .flake8
+          echo ""
+          flake8 src/ tests/ --config=.flake8 --statistics
 
       - name: Type checking (mypy)
         run: mypy src/ --ignore-missing-imports --no-error-summary
