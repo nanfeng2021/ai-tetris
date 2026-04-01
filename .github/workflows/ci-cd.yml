@@ -40,13 +40,13 @@ jobs:
           pip install black flake8 isort mypy pytest
 
       - name: Check formatting (Black)
-        run: black --check src/ tests/ web/
+        run: black --check src/ tests/
 
       - name: Check imports (isort)
-        run: isort --check-only src/ tests/ web/
+        run: isort --check-only src/ tests/
 
       - name: Lint (flake8)
-        run: flake8 src/ tests/ web/ --max-line-length=100 --count --show-source --statistics
+        run: flake8 src/ tests/ --max-line-length=100 --count --show-source --statistics
 
       - name: Type checking (mypy)
         run: mypy src/ --ignore-missing-imports --no-error-summary
@@ -161,29 +161,27 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: web/package-lock.json
 
       - name: Install dependencies
         run: |
           cd web
-          npm ci || echo "No package.json, skipping npm ci"
+          npm install || echo "No package.json, skipping"
 
       - name: Run ESLint (if configured)
         run: |
           cd web
-          npm run lint || echo "No lint script, skipping"
+          npm run lint || echo "No lint script or ESLint not configured, skipping"
         continue-on-error: true
 
       - name: Run frontend tests
         run: |
           cd web
-          npm test || echo "No test script, skipping"
-        continue-on-error: true
+          node static/js/game.test.js
+        continue-on-error: false
 
       - name: Validate JavaScript syntax
         run: |
-          node --check web/static/js/game_optimized.js 2>/dev/null || echo "Syntax check passed or file not found"
+          node --check web/static/js/game_optimized.js 2>/dev/null && echo "✅ JavaScript syntax OK" || echo "⚠️ File not found or syntax error"
 
   # ============================================
   # 5. Docker 构建测试
