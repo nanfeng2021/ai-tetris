@@ -2,10 +2,11 @@
 测试 Validators 验证器
 """
 
+import os
 import sys
 
 # type: ignore[E402]
-sys.path.insert(0, "/root/.openclaw/workspace/ai-tetris/src")
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from harness.validators import ValidationStatus, Validators, run_all_validators
 
