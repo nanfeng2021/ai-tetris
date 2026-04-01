@@ -153,16 +153,12 @@ def test_run_all_guardrails():
     # 测试 2: 碰撞检查（需要 board 和 piece）
     from board import GameBoard
     from pieces import PieceFactory
-    
+
     board = GameBoard()
     factory = PieceFactory()
     piece = factory.get_next_piece()
-    
-    results = run_all_guardrails(
-        x=3, y=0, 
-        board=board.board, 
-        piece=piece
-    )
+
+    results = run_all_guardrails(x=3, y=0, board=board.board, piece=piece)
     assert len(results) >= 2, "应该有边界和碰撞检查结果"
     print(f"✅ 碰撞检查：共{len(results)}个检查结果")
 
