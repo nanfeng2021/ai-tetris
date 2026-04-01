@@ -6,7 +6,7 @@
 import os
 import sys
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 sys.path.insert(0, os.path.dirname(__file__))
 from harness.guardrails import Guardrails

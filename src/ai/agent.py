@@ -8,7 +8,7 @@ import random
 import sys
 import time
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 sys.path.insert(0, os.path.dirname(__file__))
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -61,7 +61,7 @@ class AIAgent:
         }
 
         # 决策历史（用于避免重复错误）
-        self.decision_history = []
+        self.decision_history: List[Dict[str, Any]] = []
         self.max_history = 10
 
         # 难度自适应
