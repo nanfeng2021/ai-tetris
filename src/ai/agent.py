@@ -216,7 +216,7 @@ class AIAgent:
 
     def _lookahead_simulation(self, candidates: List[Tuple[Dict, float]]) -> Dict:
         """前瞻模拟：评估几步之后的情况"""
-        best_candidate = candidates[0]
+        best_candidate: Dict = candidates[0][0]
         best_avg_score = float("-inf")
 
         # 对每个候选进行随机模拟

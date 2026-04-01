@@ -24,7 +24,7 @@ BOARD_HEIGHT = 20
 class BoardState:
     """面板状态快照"""
 
-    board: List[List[str]]
+    board: List[List[Optional[Piece]]]
     score: int
     lines: int
     level: int

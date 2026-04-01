@@ -114,7 +114,7 @@ class Monitors:
 
     def __init__(self, game_id: str = "default"):
         self.game_id = game_id
-        self.start_time = None
+        self.start_time: Optional[float] = None
 
     def start_game(self, mode: str = "human"):
         """开始新游戏"""
