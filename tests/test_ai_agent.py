@@ -67,11 +67,11 @@ class TestAIAgent:
         """测试空洞计算"""
         # 创建一个简单的洞场景
         test_board = [[None for _ in range(10)] for _ in range(20)]
-        
+
         # x=5 列：y=10 有方块，y=11 是空的 = 1 个洞
         test_board[10][5] = "X"
         # y=11 及以后都是洞
-        
+
         holes = self.agent._calculate_holes(test_board)
         assert holes == 9  # y=11 到 y=19 共 9 个洞
 
