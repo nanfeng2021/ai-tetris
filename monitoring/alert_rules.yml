@@ -1,0 +1,185 @@
+# Prometheus Alert Rules for AI Tetris
+# 告警规则配置
+
+groups:
+  - name: tetris_alerts
+    interval: 30s
+    rules:
+      # ============================================
+      # 游戏异常告警
+      # ============================================
+      
+      # 游戏卡死检测
+      - alert: GameStuck
+        expr: rate(tetris_game_duration_seconds_count[5m]) == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "游戏可能已卡死"
+          description: "过去 5 分钟内没有新游戏开始，持续 2 分钟"
+          
+      # Guardrail 频繁触发
+      - alert: HighGuardrailTriggerRate
+        expr: rate(tetris_guardrail_triggers_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Guardrail 触发频率过高"
+          description: "每分钟触发 {{ $value }} 次，可能存在逻辑问题"
+          
+      # AI 决策延迟过高
+      - alert: HighAILatency
+        expr: histogram_quantile(0.95, rate(tetris_ai_decision_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI 决策延迟过高"
+          description: "P95 延迟为 {{ $value }} 秒，超过 2 秒阈值"
+          
+      # 连续游戏失败
+      - alert: ConsecutiveGameFailures
+        expr: rate(tetris_game_over_total[10m]) > 0.5
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "游戏结束频率较高"
+          description: "平均每 2 分钟就有游戏结束，玩家体验可能不佳"
+          
+      # ============================================
+      # 系统资源告警
+      # ============================================
+      
+      # 内存使用过高
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes / 1024 / 1024 > 500
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "内存使用超过 500MB"
+          description: "当前内存使用：{{ $value | humanize }} MB"
+          
+      # CPU 使用率过高
+      - alert: HighCPUUsage
+        expr: rate(process_cpu_seconds_total[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU 使用率过高"
+          description: "CPU 使用率：{{ $value | humanizePercentage }}"
+          
+      # HTTP 错误率高
+      - alert: HighHTTPErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HTTP 5xx 错误率超过 5%"
+          description: "错误率：{{ $value | humanizePercentage }}"
+          
+      # ============================================
+      # 业务指标告警
+      # ============================================
+      
+      # 得分异常低
+      - alert: AbnormallyLowScore
+        expr: histogram_quantile(0.5, rate(tetris_final_score_bucket[1h])) < 1000
+        for: 30m
+        labels:
+          severity: info
+        annotations:
+          summary: "玩家得分中位数偏低"
+          description: "过去 1 小时得分中位数低于 1000，游戏难度可能需要调整"
+          
+      # 消除行数异常
+      - alert: LowLinesClearedRate
+        expr: rate(tetris_lines_cleared_total[30m]) < 1
+        for: 30m
+        labels:
+          severity: info
+        annotations:
+          summary: "消除行数速率偏低"
+          description: "每分钟消除行数：{{ $value }}"
+          
+      # AI 模式参与率低
+      - alert: LowAIModeUsage
+        expr: rate(tetris_games_total{mode="ai"}[1h]) / rate(tetris_games_total[1h]) < 0.1
+        for: 2h
+        labels:
+          severity: info
+        annotations:
+          summary: "AI 模式使用率低"
+          description: "只有 {{ $value | humanizePercentage }} 的游戏使用 AI 模式"
+          
+      # ============================================
+      # Web 服务告警
+      # ============================================
+      
+      # Web 服务不可用
+      - alert: WebServiceDown
+        expr: up{job="tetris-web"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Web 服务不可用"
+          description: "Tetris Web 服务已宕机超过 1 分钟"
+          
+      # 响应时间过长
+      - alert: SlowResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API 响应时间过长"
+          description: "P95 响应时间：{{ $value }} 秒"
+          
+      # ============================================
+      # 自定义业务告警
+      # ============================================
+      
+      # 单局游戏时长过长
+      - alert: ExtremelyLongGame
+        expr: tetris_game_duration_seconds > 1800  # 30 分钟
+        for: 0m
+        labels:
+          severity: info
+        annotations:
+          summary: "检测到超长游戏"
+          description: "游戏已持续 {{ $value }} 秒，玩家可能挂机"
+          
+      # 完美游戏（一次未失误）
+      - alert: PerfectGame
+        expr: tetris_lines_cleared_total{holes=0} > 0
+        for: 0m
+        labels:
+          severity: info
+        annotations:
+          summary: "检测到完美游戏！"
+          description: "玩家完成了无空洞的完美表现 🎉"
+
+# ============================================
+# 告警通知配置 (可选)
+# ============================================
+# 需要配合 Alertmanager 使用
+# 
+# 示例配置:
+# global:
+#   smtp_smarthost: 'localhost:25'
+#   smtp_from: 'alertmanager@example.com'
+#
+# route:
+#   group_by: ['alertname']
+#   receiver: 'email-notifications'
+#
+# receivers:
+#   - name: 'email-notifications'
+#     email_configs:
+#       - to: 'admin@example.com'

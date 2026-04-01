@@ -1,0 +1,245 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "tetris-main",
+    "title": "AI Tetris - Main Dashboard",
+    "tags": ["tetris", "gaming", "harness-engineering"],
+    "timezone": "Asia/Shanghai",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "5s",
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "type": "stat",
+        "title": "🎮 当前活跃游戏",
+        "targets": [
+          {
+            "expr": "tetris_active_games",
+            "legendFormat": "Active Games"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 10},
+                {"color": "red", "value": 50}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "type": "stat",
+        "title": "📊 今日总游戏数",
+        "targets": [
+          {
+            "expr": "sum(increase(tetris_games_total[24h]))",
+            "legendFormat": "Total Games"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"}
+          }
+        }
+      },
+      {
+        "id": 3,
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8},
+        "type": "gauge",
+        "title": "🤖 AI 模式使用率",
+        "targets": [
+          {
+            "expr": "rate(tetris_games_total{mode=\"ai\"}[1h]) / rate(tetris_games_total[1h]) * 100",
+            "legendFormat": "AI Mode %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 20},
+                {"color": "green", "value": 50}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8},
+        "type": "stat",
+        "title": "🧱 平均消除行数",
+        "targets": [
+          {
+            "expr": "rate(tetris_lines_cleared_total[1h]) / rate(tetris_games_total[1h])",
+            "legendFormat": "Avg Lines"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "decimals": 1
+          }
+        }
+      },
+      {
+        "id": 5,
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8},
+        "type": "stat",
+        "title": "🏆 平均得分",
+        "targets": [
+          {
+            "expr": "rate(tetris_final_score_sum[1h]) / rate(tetris_final_score_count[1h])",
+            "legendFormat": "Avg Score"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "decimals": 0
+          }
+        }
+      },
+      {
+        "id": 6,
+        "gridPos": {"h": 9, "w": 12, "x": 0, "y": 16},
+        "type": "timeseries",
+        "title": "📈 游戏趋势 (24h)",
+        "targets": [
+          {
+            "expr": "rate(tetris_games_total[5m]) * 60",
+            "legendFormat": "Games/min"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "lineWidth": 2,
+            "fillOpacity": 10
+          }
+        }
+      },
+      {
+        "id": 7,
+        "gridPos": {"h": 9, "w": 12, "x": 12, "y": 16},
+        "type": "timeseries",
+        "title": "⚡ AI 决策延迟",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(tetris_ai_decision_seconds_bucket[5m]))",
+            "legendFormat": "P50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(tetris_ai_decision_seconds_bucket[5m]))",
+            "legendFormat": "P95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(tetris_ai_decision_seconds_bucket[5m]))",
+            "legendFormat": "P99"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "color": {"mode": "palette-classic"}
+          }
+        }
+      },
+      {
+        "id": 8,
+        "gridPos": {"h": 9, "w": 12, "x": 0, "y": 25},
+        "type": "bargauge",
+        "title": "🔒 Guardrail 触发统计",
+        "targets": [
+          {
+            "expr": "sum by (rule) (increase(tetris_guardrail_triggers_total[24h]))",
+            "legendFormat": "{{rule}}"
+          }
+        ],
+        "options": {
+          "displayMode": "gradient",
+          "orientation": "horizontal"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"}
+          }
+        }
+      },
+      {
+        "id": 9,
+        "gridPos": {"h": 9, "w": 12, "x": 12, "y": 25},
+        "type": "piechart",
+        "title": "🎯 消除行数分布",
+        "targets": [
+          {
+            "expr": "sum by (level) (increase(tetris_lines_cleared_total[24h]))",
+            "legendFormat": "Level {{level}}"
+          }
+        ],
+        "options": {
+          "pieType": "pie",
+          "legend": {"displayMode": "table"}
+        }
+      },
+      {
+        "id": 10,
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 34},
+        "type": "table",
+        "title": "📋 实时游戏状态",
+        "targets": [
+          {
+            "expr": "tetris_game_state",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {},
+              "renameByName": {
+                "Time": "时间",
+                "Value": "状态值",
+                "player_id": "玩家 ID",
+                "score": "得分",
+                "level": "等级",
+                "lines": "行数"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "mode",
+          "type": "query",
+          "query": "label_values(tetris_games_total, mode)",
+          "refresh": 1,
+          "current": {
+            "text": "All",
+            "value": "$__all"
+          }
+        }
+      ]
+    }
+  },
+  "overwrite": true
+}

@@ -1,0 +1,108 @@
+# Game Configuration Settings
+
+# ============================================
+# Game Board Settings
+# ============================================
+board:
+  width: 10
+  height: 20
+  cell_size: 30  # pixels
+
+# ============================================
+# Game Speed Settings
+# ============================================
+speed:
+  initial_drop_interval: 1000  # milliseconds
+  min_drop_interval: 100       # fastest speed
+  drop_interval_decrement: 50  # how much faster per level
+  level_up_lines: 10           # lines needed to level up
+
+# ============================================
+# Scoring System
+# ============================================
+scoring:
+  single_line: 100
+  double_lines: 300
+  triple_lines: 500
+  tetris: 800        # 4 lines at once
+  soft_drop: 1       # per cell
+  hard_drop: 2       # per cell
+  level_bonus: 500   # bonus per level
+
+# ============================================
+# Piece Colors (RGB)
+# ============================================
+colors:
+  I: [0, 255, 255]    # Cyan
+  O: [255, 255, 0]    # Yellow
+  T: [128, 0, 128]    # Purple
+  S: [0, 255, 0]      # Green
+  Z: [255, 0, 0]      # Red
+  J: [0, 0, 255]      # Blue
+  L: [255, 165, 0]    # Orange
+
+# ============================================
+# AI Settings
+# ============================================
+ai:
+  enabled: true
+  decision_timeout: 2.0      # seconds
+  evaluation_depth: 3        # search depth
+  use_genetic_algorithm: false
+  population_size: 50
+  mutation_rate: 0.1
+
+# ============================================
+# Weights for AI Evaluation
+# ============================================
+ai_weights:
+  aggregate_height: -0.510066
+  complete_lines: 0.760666
+  holes: -0.356638
+  bumpiness: -0.184409
+
+# ============================================
+# Monitoring Settings
+# ============================================
+monitoring:
+  prometheus_enabled: true
+  metrics_port: 9090
+  log_level: INFO
+  metrics_prefix: tetris
+
+# ============================================
+# Web Server Settings
+# ============================================
+web:
+  host: 0.0.0.0
+  port: 5000
+  debug: false
+  cors_enabled: true
+
+# ============================================
+# Cloudflare Tunnel Settings
+# ============================================
+tunnel:
+  enabled: false
+  config_path: ~/.cloudflared/config.yml
+
+# ============================================
+# Display Settings
+# ============================================
+display:
+  show_next_piece: true
+  show_ghost_piece: true
+  show_grid: true
+  fps_cap: 60
+
+# ============================================
+# Sound Settings
+# ============================================
+sound:
+  enabled: true
+  volume: 0.3
+  move_sound: true
+  rotate_sound: true
+  drop_sound: true
+  line_clear_sound: true
+  game_over_sound: true
